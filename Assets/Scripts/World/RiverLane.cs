@@ -14,9 +14,12 @@ namespace VoxelRoad.World
 
         protected override void Build()
         {
+            // 레인 타입별 Y 오프셋 (Grass=-0.02, Road=0, River=-0.01)로 Z-fighting 방지.
             if (_water != null)
             {
                 _water.transform.localScale = new Vector3(_laneSpanX / 10f, 1f, 0.1f);
+                var lp = _water.transform.localPosition;
+                _water.transform.localPosition = new Vector3(lp.x, -0.01f, lp.z);
             }
             if (_spawner != null && _logConfig != null)
             {

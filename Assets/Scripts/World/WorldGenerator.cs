@@ -91,6 +91,14 @@ namespace VoxelRoad.World
 
         private void SpawnLane(int zIndex, LaneType type)
         {
+            // 동일 zIndex 에 이미 레인이 있으면 제거 후 재생성 (중복 겹침 방지)
+            if (_lanes.TryGetValue(zIndex, out BaseLane existingLane))
+            {
+                Debug.LogWarning($"[WorldGenerator] Lane already exists at Z={zIndex} (type={existingLane.Type}), replacing with {type}.");
+                if (existingLane != null) existingLane.Despawn();
+                _lanes.Remove(zIndex);
+            }
+
             BaseLane lane = null;
             if (type == LaneType.Grass)
             {
@@ -98,6 +106,8 @@ namespace VoxelRoad.World
                 if (prefab == null) { Debug.LogError("[WorldGenerator] GrassLane prefab 없음"); return; }
                 var instance = Instantiate(prefab, transform);
                 instance.SetConfig(_config);
+                // 시작 안전 구간(0 이상 SafeStartLanes 미만)이면 플레이어 시작 셀을 비움
+                instance.SetSafeStart(zIndex >= 0 && zIndex < _config.SafeStartLanes);
                 lane = instance;
             }
             else if (type == LaneType.Road)

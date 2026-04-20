@@ -18,9 +18,8 @@ namespace VoxelRoad.CameraSystem
 
         [Header("Follow")]
         [SerializeField] private string _playerTag = "Player";
-        [Tooltip("Player 기준 카메라 위치. Y는 높이, Z는 뒤 거리.")]
+        [Tooltip("Player 기준 카메라 위치. Y는 높이, Z는 뒤 거리. CrossyRoadCameraExtension 이 사용.")]
         [SerializeField] private Vector3 _followOffset = new Vector3(0f, 20f, -6f);
-        [SerializeField] private Vector3 _positionDamping = new Vector3(1.5f, 0f, 0.3f);
 
         private void OnValidate() { if (isActiveAndEnabled) Apply(); }
         private void Start() { Apply(); }
@@ -55,15 +54,10 @@ namespace VoxelRoad.CameraSystem
             lens.ModeOverride = _orthographic ? LensSettings.OverrideModes.Orthographic : LensSettings.OverrideModes.None;
             vcam.Lens = lens;
 
-            // Body: CinemachineFollow (v3 Transposer 계승)
-            var follow = GetComponent<CinemachineFollow>();
-            if (follow == null) follow = gameObject.AddComponent<CinemachineFollow>();
-            follow.FollowOffset = _followOffset;
-            var tracker = follow.TrackerSettings;
-            tracker.PositionDamping = _positionDamping;
-            follow.TrackerSettings = tracker;
+            // Body: 커스텀 CrossyRoadCameraExtension 이 전담 (CinemachineFollow 불필요 — Body 결과를 덮어쓰므로 중복).
 
-            // Aim: Do Nothing — 기존 Aim 컴포넌트 제거
+            // 기존 Body/Aim 컴포넌트 제거 (Extension 이 Body 단계 점유)
+            RemoveIfPresent<CinemachineFollow>();
             RemoveIfPresent<CinemachineRotationComposer>();
             RemoveIfPresent<CinemachineHardLookAt>();
             RemoveIfPresent<CinemachinePanTilt>();
@@ -87,7 +81,15 @@ namespace VoxelRoad.CameraSystem
             var c = GetComponent<T>();
             if (c == null) return;
 #if UNITY_EDITOR
-            if (!Application.isPlaying) { DestroyImmediate(c); return; }
+            if (!Application.isPlaying)
+            {
+                // OnValidate/렌더/물리 콜백 중 DestroyImmediate 금지 → delayCall 로 지연.
+                UnityEditor.EditorApplication.delayCall += () =>
+                {
+                    if (c != null) DestroyImmediate(c);
+                };
+                return;
+            }
 #endif
             Destroy(c);
         }

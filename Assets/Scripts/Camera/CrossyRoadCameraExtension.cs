@@ -19,16 +19,20 @@ namespace VoxelRoad.CameraSystem
         [SerializeField] private float _baseGroundY = 0f;
 
         [Header("Follow Tuning")]
-        [SerializeField] private float _forwardFollowSpeed = 5f;
-        [SerializeField] private float _lateralDamping = 2f;
+        [SerializeField] private float _forwardFollowSpeed = 1.5f;
+        [SerializeField] private float _lateralDamping = 1.5f;
 
-        private float _maxFollowedZ = float.NegativeInfinity;
+        [Tooltip("시작 지점 기준 이 거리(레인 수) 이내에서는 카메라 Z 고정. 이후부터만 추적 시작.")]
+        [SerializeField] private float _forwardDeadzoneLanes = 4f;
+
+        private float _startPlayerZ;
         private bool _initialized;
 
         public Transform Player { get => _player; set => _player = value; }
         public Vector3 FollowOffset { get => _followOffset; set => _followOffset = value; }
         public float ForwardFollowSpeed { get => _forwardFollowSpeed; set => _forwardFollowSpeed = value; }
         public float LateralDamping { get => _lateralDamping; set => _lateralDamping = value; }
+        public float ForwardDeadzoneLanes { get => _forwardDeadzoneLanes; set => _forwardDeadzoneLanes = value; }
 
         protected override void PostPipelineStageCallback(
             CinemachineVirtualCameraBase vcam,
@@ -40,9 +44,9 @@ namespace VoxelRoad.CameraSystem
             if (_player == null) return;
 
             Vector3 playerPos = _player.position;
-            if (!_initialized || playerPos.z > _maxFollowedZ)
+            if (!_initialized)
             {
-                _maxFollowedZ = playerPos.z;
+                _startPlayerZ = playerPos.z;
                 _initialized = true;
             }
 
@@ -52,7 +56,10 @@ namespace VoxelRoad.CameraSystem
             float targetX = playerPos.x + _followOffset.x;
             // 점프 아크(플레이어 Y)를 카메라에 반영하면 화면 기울어짐 발생 → 고정 Y 사용.
             float targetY = (_useFixedY ? _baseGroundY : playerPos.y) + _followOffset.y;
-            float targetZ = _maxFollowedZ + _followOffset.z;
+            // 데드존: 플레이어가 시작점에서 deadzone 레인 이상 전진했을 때만 카메라 Z 추적.
+            // 추적 시에도 (plrZ - deadzone) + offset.z 로 트레일 유지 → 플레이어 ±데드존 간격 고정.
+            float effectivePlayerZ = Mathf.Max(_startPlayerZ, playerPos.z - _forwardDeadzoneLanes);
+            float targetZ = effectivePlayerZ + _followOffset.z;
 
             float tX = dt > 0f ? Mathf.Clamp01(dt * _lateralDamping) : 1f;
             float tZ = dt > 0f ? Mathf.Clamp01(dt * _forwardFollowSpeed) : 1f;

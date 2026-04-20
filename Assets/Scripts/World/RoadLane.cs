@@ -22,9 +22,12 @@ namespace VoxelRoad.World
                 float dir = (_zIndex % 2 == 0) ? 1f : -1f;
                 _spawner.Initialize(_vehicleConfig, dir, _laneSpanX);
             }
+            // 레인 타입별 Y 오프셋 (Grass=-0.02, Road=0, River=-0.01)로 Z-fighting 방지.
             if (_asphalt != null)
             {
                 _asphalt.transform.localScale = new Vector3(_laneSpanX / 10f, 1f, 0.1f);
+                var lp = _asphalt.transform.localPosition;
+                _asphalt.transform.localPosition = new Vector3(lp.x, 0f, lp.z);
             }
 
             if (_markerRoot == null) return;

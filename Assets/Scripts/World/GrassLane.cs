@@ -9,11 +9,15 @@ namespace VoxelRoad.World
         [SerializeField] private Transform _decorRoot;
 
         private LaneConfigSO _config;
+        private bool _isSafeStart;
         private readonly System.Collections.Generic.HashSet<int> _blockedCells = new();
 
         public override LaneType Type => LaneType.Grass;
 
         public void SetConfig(LaneConfigSO config) => _config = config;
+
+        /// <summary>시작 안전 구간 표시(플레이어 시작 지점 셀에는 데코를 배치하지 않음).</summary>
+        public void SetSafeStart(bool safe) => _isSafeStart = safe;
 
         /// <summary>데코가 점유한 X 셀 (타일 중심 좌표 int) — 충돌 판정에서 사용.</summary>
         public System.Collections.Generic.IReadOnlyCollection<int> BlockedCells => _blockedCells;
@@ -25,12 +29,12 @@ namespace VoxelRoad.World
             _blockedCells.Clear();
 
             // 바닥 스케일: Unity Plane = 10m → laneSpanX / 10.
-            // Y를 도로/강 대비 -0.01 낮춰 경계 Z-fighting 방지(도로 마커가 잔디 위에 얹혀 보이는 현상 제거).
+            // 레인 타입별 Y 오프셋으로 Z-fighting 완전 분리 (Grass=-0.02, Road=0, River=-0.01).
             if (_ground != null)
             {
                 _ground.transform.localScale = new Vector3(_laneSpanX / 10f, 1f, 0.1f);
                 var lp = _ground.transform.localPosition;
-                _ground.transform.localPosition = new Vector3(lp.x, -0.01f, lp.z);
+                _ground.transform.localPosition = new Vector3(lp.x, -0.02f, lp.z);
             }
 
             if (_decorRoot == null || _config == null) return;
@@ -46,6 +50,8 @@ namespace VoxelRoad.World
             {
                 bool place = Random.value <= _config.GrassDecorDensity;
                 if (place && consecutiveBlocked >= MAX_CONSECUTIVE) place = false;
+                // 안전 구간 레인은 플레이어 시작 셀(x=0) 및 좌우 1셀을 비워 길을 보장
+                if (place && _isSafeStart && Mathf.Abs(x) <= 1) place = false;
                 if (!place) { consecutiveBlocked = 0; continue; }
 
                 var prefab = prefabs[Random.Range(0, prefabs.Length)];

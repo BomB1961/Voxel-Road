@@ -68,3 +68,9 @@ debug_filtered.log
 # MCP For Unity 관련 로컬 설정
 /.claude/
 /.mcp.json
+
+# MCP For Unity 작업 산출물 (로그/스크린샷)
+/[Aa]ssets/UnityMCP/
+/[Aa]ssets/UnityMCP.meta
+/[Aa]ssets/Screenshots/
+/[Aa]ssets/Screenshots.meta

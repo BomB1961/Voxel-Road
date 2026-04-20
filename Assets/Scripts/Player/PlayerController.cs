@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _jumpHeight = 0.5f;
 
     private GridPosition _gridPos;
+    private GridPosition _moveTarget;   // 현재 진행 중인 이동의 도착 셀 (큐 입력 기준점)
     private GridPosition? _queuedTarget;
     private bool _isMoving;
 
@@ -69,7 +70,9 @@ public class PlayerController : MonoBehaviour
             case MoveDirection.Left:     dx = -1; break;
             case MoveDirection.Right:    dx =  1; break;
         }
-        GridPosition target = _gridPos.Move(dx, dz);
+        // 이동 중이면 진행 중인 도착 셀을 기준으로 다음 칸 계산 (연타 시 2칸 점프 방지).
+        GridPosition basePos = _isMoving ? _moveTarget : _gridPos;
+        GridPosition target = basePos.Move(dx, dz);
         // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
         if (target.Z < 0) return;
         // 좌우 경계: LaneSpanX 절반 밖으로 이동 금지.
@@ -78,6 +81,9 @@ public class PlayerController : MonoBehaviour
         if (target.X < -halfSpan || target.X >= halfSpan) return;
         // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
         if (wg != null && wg.IsCellBlocked(target.X, target.Z)) return;
+
+        // 이동 방향으로 즉시 시선 회전 (Crossy Road 특유의 틱 회전)
+        transform.rotation = Quaternion.LookRotation(new Vector3(dx, 0f, dz));
 
         if (_isMoving)
         {
@@ -90,6 +96,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator MoveRoutine(GridPosition target)
     {
         _isMoving = true;
+        _moveTarget = target;
         _queuedTarget = null;
 
         // 이동 시작 시점에 통나무로부터 언패런트 (이동은 그리드 기준)
