@@ -23,6 +23,9 @@ namespace VoxelRoad.World
         /// <summary>구체 클래스가 레인 비주얼을 구성.</summary>
         protected abstract void Build();
 
+        /// <summary>해당 X 셀이 통행 불가(고정 장애물 점유)이면 true.</summary>
+        public virtual bool IsBlockedAt(int x) => false;
+
         public virtual void Despawn()
         {
             Destroy(gameObject);

@@ -29,6 +29,8 @@ namespace VoxelRoad.World
         [Range(0f, 1f)]
         [Tooltip("타일당 데코 배치 확률.")]
         [SerializeField] private float _grassDecorDensity = 0.35f;
+        [Tooltip("잔디 데코 인스턴스 스케일 배율 (Player 대비 크게 보이도록).")]
+        [SerializeField] private float _grassDecorScale = 1.4f;
 
         [Header("Weights")]
         [Range(0f, 1f)]
@@ -38,9 +40,10 @@ namespace VoxelRoad.World
         [Range(0f, 1f)]
         [SerializeField] private float _riverWeight = 0.25f;
 
-        [Header("Road")]
-        [Tooltip("같은 유형 레인 최대 연속 반복 수.")]
-        [SerializeField] private int _maxSameTypeInARow = 3;
+        [Header("Chunk Length (per lane type)")]
+        [SerializeField] private Vector2Int _grassChunk = new Vector2Int(1, 2);
+        [SerializeField] private Vector2Int _roadChunk = new Vector2Int(2, 4);
+        [SerializeField] private Vector2Int _riverChunk = new Vector2Int(2, 3);
 
         public int LaneSpanX => _laneSpanX;
         public int LookaheadLanes => _lookaheadLanes;
@@ -51,9 +54,22 @@ namespace VoxelRoad.World
         public RiverLane RiverLanePrefab => _riverLanePrefab;
         public GameObject[] GrassDecorPrefabs => _grassDecorPrefabs;
         public float GrassDecorDensity => _grassDecorDensity;
+        public float GrassDecorScale => _grassDecorScale;
         public float GrassWeight => _grassWeight;
         public float RoadWeight => _roadWeight;
         public float RiverWeight => _riverWeight;
-        public int MaxSameTypeInARow => _maxSameTypeInARow;
+
+        public int MinChunkLength(LaneType t) => t switch
+        {
+            LaneType.Road => _roadChunk.x,
+            LaneType.River => _riverChunk.x,
+            _ => _grassChunk.x,
+        };
+        public int MaxChunkLength(LaneType t) => t switch
+        {
+            LaneType.Road => _roadChunk.y,
+            LaneType.River => _riverChunk.y,
+            _ => _grassChunk.y,
+        };
     }
 }

@@ -70,6 +70,10 @@ public class PlayerController : MonoBehaviour
             case MoveDirection.Right:    dx =  1; break;
         }
         GridPosition target = _gridPos.Move(dx, dz);
+        // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
+        var wg = WorldGenerator.Instance;
+        if (wg != null && wg.IsCellBlocked(target.X, target.Z)) return;
+
         if (_isMoving)
         {
             _queuedTarget = target;

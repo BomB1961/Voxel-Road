@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae954f9b06ef9c74d9a0452aff0a4138, type: 3}
   m_Name: LaneConfig
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.World.LaneConfigSO
-  _laneSpanX: 16
-  _lookaheadLanes: 14
-  _lookbehindLanes: 4
-  _safeStartLanes: 6
+  _laneSpanX: 50
+  _lookaheadLanes: 25
+  _lookbehindLanes: 15
+  _safeStartLanes: 3
   _grassLanePrefab: {fileID: 7647306433298277920, guid: 742c6e02e9fc2e74f978de5cc85b9496, type: 3}
   _roadLanePrefab: {fileID: 572463087062380600, guid: ae8d5dd0caff97e4cacf1706058c769f, type: 3}
   _riverLanePrefab: {fileID: 4694676448557797182, guid: 89386c5d0a8269d42a65c90c3fc53794, type: 3}
@@ -24,14 +24,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: e5fc7647b45d4554db408381fdc48a11, type: 3}
   - {fileID: 919132149155446097, guid: b284afbbd55d141489a4f3b9232f8a28, type: 3}
   - {fileID: 919132149155446097, guid: 55d60739b2da6d84c9fa52060a71d9b0, type: 3}
-  - {fileID: 919132149155446097, guid: b8bbc46c8d8d0b049a6fad14025712fa, type: 3}
-  - {fileID: 919132149155446097, guid: 440cdb29d57e4c54ca9fba1445030b17, type: 3}
-  - {fileID: 919132149155446097, guid: 29d13dbac9d559b4584f9bf2a89d3c84, type: 3}
-  - {fileID: 919132149155446097, guid: 63c80643da4d8b840b0bda8b3bdaeb0d, type: 3}
-  - {fileID: 919132149155446097, guid: d7c05062fc35ca246861dc6e9dce6cbd, type: 3}
-  - {fileID: 919132149155446097, guid: 624b632453480e44da773cdb131d4c33, type: 3}
-  _grassDecorDensity: 0.35
-  _grassWeight: 0.4
-  _roadWeight: 0.35
+  _grassDecorDensity: 0.12
+  _grassDecorScale: 1
+  _grassWeight: 0.35
+  _roadWeight: 0.4
   _riverWeight: 0.25
-  _maxSameTypeInARow: 3
+  _grassChunk: {x: 1, y: 2}
+  _roadChunk: {x: 2, y: 4}
+  _riverChunk: {x: 2, y: 3}

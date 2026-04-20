@@ -112,6 +112,21 @@
 - **설계 결정**: 통나무 탑승을 parent transform로 처리 → Player 이동 시 언패런트, Log 소멸 시 OnDestroy에서 parent 해제 → 다음 프레임 CheckRiverArrival가 익사 판정
 - **향후 확장**: River에 연꽃잎(lily pad) 블로킹 셀 추가 시 GrassLane의 BlockedCells 패턴 재사용 가능
 
+### 스케일 비례 조정 ✅ (2026-04-20)
+- [x] Player 자식 모델 0.6배 축소, BoxCollider size=(0.45, 0.6, 0.45) 조정
+- [x] Vehicle 6종 자식 모델 1.4배 확대, BoxCollider size=(2.4, 1.1, 1.1) 조정
+- [x] Log 4종 자식 모델 1.4배 확대, BoxCollider 폭 3~4m로 확장
+- [x] LaneConfigSO `_grassDecorScale=1.4` 추가, GrassLane.Build에서 instantiate 직후 스케일 적용
+- **설계 결정**: 스케일을 **자식 visual에만** 적용. Root Transform은 1.0 유지 → Player를 Log에 parent 시 스케일 전파 방지
+- **비고**: Crossy Road 정품의 "장애물이 플레이어보다 크다" 비주얼 룩 달성
+
+### 품질 개선 라운드 1 ✅ (2026-04-20)
+- [x] **장애물 충돌**: `BaseLane.IsBlockedAt(x)` virtual 추가, `GrassLane` 오버라이드, `WorldGenerator.IsCellBlocked(x,z)` 공개. `PlayerController.HandleMoveInput`에서 이동 시작 전 체크 → 나무·바위 셀로는 이동 불가
+- [x] **스케일 재조정**: 차량 자식 1.4→1.0 (도로 너비 대비 정상), 통나무 자식 1.4→1.1, 데코 1.4→1.2. BoxCollider도 대응해 축소
+- [x] **청크 기반 패턴**: `WorldGenerator.SpawnNextChunk()` — 청크 단위로 같은 타입 N칸 연속 생성, 직전 청크 타입은 가중치 0으로 제외해 반드시 교차. `LaneConfigSO._grassChunk/_roadChunk/_riverChunk = Vector2Int(min,max)` 범위(1-2, 2-4, 2-3). SafeStart 6→3
+- [x] **카메라 배경**: Main Camera `clearFlags=SolidColor`, `backgroundColor=(0.66,0.85,0.95)` 하늘색. Skybox·무관한 배경 제거
+- [x] Play 검증: Grass(3)→Road(2)→Grass(2)→River(3)→Grass(2)→Road(2)→Grass(1)→Road(3) 패턴 확인, blocked cell 이동 차단(reflection로 gridX 변화 없음) 검증 ✓
+
 ### Step 6 — Rail + 기차 (대기)
 ### Step 7 — 독수리 타임아웃 사망 (대기)
 ### Step 8 — 점수 + UI (대기)

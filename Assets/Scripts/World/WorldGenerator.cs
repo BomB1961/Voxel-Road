@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace VoxelRoad.World
 {
-    /// <summary>플레이어 전진에 따라 레인을 앞으로 스폰하고 뒤쪽을 정리한다.</summary>
+    /// <summary>플레이어 전진에 따라 청크 단위로 레인을 스폰/디스폰.</summary>
     public sealed class WorldGenerator : MonoBehaviour
     {
         [SerializeField] private LaneConfigSO _config;
@@ -11,20 +11,12 @@ namespace VoxelRoad.World
 
         private readonly Dictionary<int, BaseLane> _lanes = new();
         private int _furthestSpawnedZ = -1;
-        private LaneType _lastType;
-        private int _sameTypeStreak;
+        private LaneType _lastChunkType;
 
         public static WorldGenerator Instance { get; private set; }
 
-        private void Awake()
-        {
-            Instance = this;
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this) Instance = null;
-        }
+        private void Awake() { Instance = this; }
+        private void OnDestroy() { if (Instance == this) Instance = null; }
 
         private void Start()
         {
@@ -38,63 +30,60 @@ namespace VoxelRoad.World
             int start = -_config.LookbehindLanes;
             int safeEnd = _config.SafeStartLanes;
             for (int z = start; z < safeEnd; z++)
-            {
                 SpawnLane(z, LaneType.Grass);
-            }
-            for (int z = safeEnd; z < safeEnd + _config.LookaheadLanes; z++)
-            {
-                SpawnLane(z, ChooseNextType());
-            }
+            _furthestSpawnedZ = Mathf.Max(_furthestSpawnedZ, safeEnd - 1);
+            _lastChunkType = LaneType.Grass;
+
+            int target = safeEnd + _config.LookaheadLanes;
+            while (_furthestSpawnedZ < target) SpawnNextChunk();
         }
 
         private void Update()
         {
             int playerZ = Mathf.RoundToInt(_player.position.z);
             int desiredFront = playerZ + _config.LookaheadLanes;
-            while (_furthestSpawnedZ < desiredFront)
-            {
-                SpawnLane(_furthestSpawnedZ + 1, ChooseNextType());
-            }
+            while (_furthestSpawnedZ < desiredFront) SpawnNextChunk();
 
             int despawnBehind = playerZ - _config.LookbehindLanes;
             var toRemove = new List<int>();
             foreach (var kv in _lanes)
-            {
                 if (kv.Key < despawnBehind) toRemove.Add(kv.Key);
-            }
-            foreach (var z in toRemove)
-            {
-                _lanes[z].Despawn();
-                _lanes.Remove(z);
-            }
+            foreach (var z in toRemove) { _lanes[z].Despawn(); _lanes.Remove(z); }
         }
 
-        /// <summary>해당 z 인덱스 레인의 타입을 반환. 존재하지 않으면 Grass로 간주.</summary>
         public LaneType GetLaneTypeAt(int zIndex)
+            => _lanes.TryGetValue(zIndex, out var lane) ? lane.Type : LaneType.Grass;
+
+        /// <summary>해당 셀이 통행 불가(데코 점유 등)이면 true.</summary>
+        public bool IsCellBlocked(int x, int zIndex)
+            => _lanes.TryGetValue(zIndex, out var lane) && lane.IsBlockedAt(x);
+
+        private void SpawnNextChunk()
         {
-            return _lanes.TryGetValue(zIndex, out var lane) ? lane.Type : LaneType.Grass;
+            LaneType type = ChooseNextChunkType();
+            int length = Random.Range(_config.MinChunkLength(type), _config.MaxChunkLength(type) + 1);
+            for (int i = 0; i < length; i++)
+                SpawnLane(_furthestSpawnedZ + 1, type);
+            _lastChunkType = type;
         }
 
-        private LaneType ChooseNextType()
+        private LaneType ChooseNextChunkType()
         {
+            // 직전 청크와 다른 타입으로 강제 → 자연스러운 패턴 변화
             float gw = _config.GrassWeight;
             float rw = _config.RoadWeight;
             float vw = _config.RiverWeight;
-            float total = gw + rw + vw;
-            float roll = Random.value * total;
-            LaneType candidate;
-            if (roll < gw) candidate = LaneType.Grass;
-            else if (roll < gw + rw) candidate = LaneType.Road;
-            else candidate = LaneType.River;
+            // 직전 타입 가중치 제거
+            if (_lastChunkType == LaneType.Grass) gw = 0f;
+            else if (_lastChunkType == LaneType.Road) rw = 0f;
+            else if (_lastChunkType == LaneType.River) vw = 0f;
 
-            if (candidate == _lastType && _sameTypeStreak >= _config.MaxSameTypeInARow)
-            {
-                // 연속 제한 돌파 시 나머지 중 가중치 큰 쪽으로 회전
-                if (candidate == LaneType.Grass) candidate = rw >= vw ? LaneType.Road : LaneType.River;
-                else if (candidate == LaneType.Road) candidate = gw >= vw ? LaneType.Grass : LaneType.River;
-                else candidate = gw >= rw ? LaneType.Grass : LaneType.Road;
-            }
-            return candidate;
+            float total = gw + rw + vw;
+            if (total <= 0f) return LaneType.Grass;
+            float roll = Random.value * total;
+            if (roll < gw) return LaneType.Grass;
+            if (roll < gw + rw) return LaneType.Road;
+            return LaneType.River;
         }
 
         private void SpawnLane(int zIndex, LaneType type)
@@ -119,34 +108,20 @@ namespace VoxelRoad.World
                 var prefab = _config.RiverLanePrefab;
                 if (prefab == null)
                 {
-                    Debug.LogWarning("[WorldGenerator] RiverLane prefab 미지정 — Grass 대체");
                     var gp = _config.GrassLanePrefab;
                     var inst = Instantiate(gp, transform);
                     inst.SetConfig(_config);
                     lane = inst;
-                    type = LaneType.Grass;
                 }
                 else
                 {
                     lane = Instantiate(prefab, transform);
                 }
             }
-            else
-            {
-                Debug.LogWarning("[WorldGenerator] 미구현 레인 유형 — Grass로 대체");
-                var gp = _config.GrassLanePrefab;
-                var inst = Instantiate(gp, transform);
-                inst.SetConfig(_config);
-                lane = inst;
-                type = LaneType.Grass;
-            }
 
             lane.Initialize(zIndex, _config.LaneSpanX);
             _lanes[zIndex] = lane;
             _furthestSpawnedZ = Mathf.Max(_furthestSpawnedZ, zIndex);
-
-            _sameTypeStreak = (type == _lastType) ? _sameTypeStreak + 1 : 1;
-            _lastType = type;
         }
     }
 }
