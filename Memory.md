@@ -40,6 +40,28 @@
 
 ---
 
+---
+
+## MCP 연결 정보 (2026-04-20 기준)
+- MCP For Unity v9.6.6, Transport: Stdio, Port 6401
+- Client: **Claude Desktop** (NOT Claude Code CLI)
+- Unity 에디터에서 `Session Active (Voxel Road)` 녹색 확인 필수
+- MCP 도구가 로드되지 않을 경우: Claude Desktop **트레이 아이콘 → Quit → 재실행** 후 **새 대화** 시작
+- manifest.json에 `com.coplaydev.unity-mcp` Git 패키지 등록 완료
+
+---
+
+## Step 0 재개 시 Claude MCP 실행 항목 (미완료)
+다음 항목을 새 세션에서 MCP 도구로 순서대로 실행:
+1. `manage_editor` — Android Build Target 전환 (Android Build Support 설치 확인 먼저)
+2. `manage_editor` — Player Settings: Default Orientation = Portrait
+3. `manage_editor` — Game View 해상도 프리셋 1080x1920 설정
+4. `manage_scene` — `Assets/Scenes/Game.unity` 생성 (Main Camera + Directional Light)
+5. `manage_editor` — Play 모드 진입 → `read_console` 에러 0건 검증 → Play 종료
+6. Memory.md Step 0 체크박스 갱신
+
+---
+
 ## 재개 방법
 1. 이 파일(`Memory.md`)을 먼저 읽어 마지막으로 완료된 Step 확인
 2. 미완료 [ ] 항목이 남은 Step부터 재개
