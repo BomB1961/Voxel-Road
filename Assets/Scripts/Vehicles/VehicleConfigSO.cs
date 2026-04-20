@@ -7,6 +7,8 @@ namespace VoxelRoad.Vehicles
     public sealed class VehicleConfigSO : ScriptableObject
     {
         [SerializeField] private Vehicle[] _vehiclePrefabs;
+        [Tooltip("각 프리팹에 대응하는 주행 속도(m/s). 배열 길이가 맞으면 해당 값 사용, 아니면 Min/MaxSpeed 랜덤.")]
+        [SerializeField] private float[] _vehicleSpeeds;
         [SerializeField] private float _minSpeed = 2.5f;
         [SerializeField] private float _maxSpeed = 5f;
         [SerializeField] private float _minSpawnInterval = 1.2f;
@@ -19,6 +21,7 @@ namespace VoxelRoad.Vehicles
         [SerializeField] private float _spawnScale = 0.6f;
 
         public Vehicle[] VehiclePrefabs => _vehiclePrefabs;
+        public float[] VehicleSpeeds => _vehicleSpeeds;
         public float MinSpeed => _minSpeed;
         public float MaxSpeed => _maxSpeed;
         public float MinSpawnInterval => _minSpawnInterval;
