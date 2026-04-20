@@ -31,6 +31,10 @@ namespace VoxelRoad.Vehicles
             float startX = _direction > 0f ? -_laneSpanX * 0.5f - 1.5f : _laneSpanX * 0.5f + 1.5f;
             Vector3 spawnPos = transform.position + new Vector3(startX - transform.position.x, 0f, 0f);
             var vehicle = Instantiate(prefab, spawnPos, Quaternion.identity, transform);
+            // 레인 폭(1m) 안에 들어오도록 Config 의 균일 스케일 적용
+            float s = _config.SpawnScale;
+            if (s > 0f && Mathf.Abs(s - 1f) > 0.001f)
+                vehicle.transform.localScale = new Vector3(s, s, s);
             vehicle.Launch(_currentSpeed, _direction, _laneSpanX);
 
             _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval);
