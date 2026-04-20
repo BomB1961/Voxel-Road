@@ -52,6 +52,20 @@ public class PlayerController : MonoBehaviour
         if (!GameManager.IsAlive || _isMoving) return;
         if (transform.parent == null) return;
 
+        // 통나무가 레인 경계를 넘으면 플레이어는 경계에 남고 내려진 뒤 익사 연출
+        var wg = WorldGenerator.Instance;
+        int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
+        float px = transform.position.x;
+        if (px < -halfSpan || px > halfSpan)
+        {
+            float clampedX = Mathf.Clamp(px, -halfSpan, halfSpan);
+            transform.SetParent(null, true);
+            var p = transform.position;
+            transform.position = new Vector3(clampedX, p.y, p.z);
+            GameManager.KillPlayer("drown");
+            return;
+        }
+
         int worldX = Mathf.RoundToInt(transform.position.x - 0.5f);
         if (worldX != _gridPos.X)
         {
@@ -122,6 +136,7 @@ public class PlayerController : MonoBehaviour
         if (_gridPos.Z > MaxZ) MaxZ = _gridPos.Z;
         _isMoving = false;
 
+        TryBoardLog();
         CheckRiverArrival();
 
         if (GameManager.IsAlive && _queuedTarget.HasValue)
@@ -129,6 +144,27 @@ public class PlayerController : MonoBehaviour
             GridPosition next = _queuedTarget.Value;
             _queuedTarget = null;
             StartCoroutine(MoveRoutine(next));
+        }
+    }
+
+    /// <summary>착지 지점에 통나무가 있으면 부모로 붙이고 X를 통나무 중심에 스냅.
+    /// 같은 통나무 내 연속 이동이나 Trigger Enter 미발생 케이스에서도 정확히 중앙에 올라탄다.</summary>
+    private void TryBoardLog()
+    {
+        var wg = WorldGenerator.Instance;
+        if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
+
+        var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
+            new Vector3(0.2f, 0.2f, 0.2f), Quaternion.identity,
+            ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
+            if (log == null) continue;
+            transform.SetParent(log.transform, true);
+            var p = transform.position;
+            transform.position = new Vector3(log.transform.position.x, p.y, p.z);
+            return;
         }
     }
 

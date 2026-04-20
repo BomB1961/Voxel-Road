@@ -19,9 +19,9 @@ MonoBehaviour:
   - {fileID: 674069173687301116, guid: 7940d65eb1600c74295bf0883b70d566, type: 3}
   - {fileID: 3174421178995877256, guid: 74390c0580dace142b2d3967a62b0a20, type: 3}
   - {fileID: 8853097641011787020, guid: c67603e0b812a0f458ebcef7217f3fda, type: 3}
-  _vehicleSpeeds: [2.5, 3.5, 4.5, 6, 3, 7]
-  _minSpeed: 2.5
+  _vehicleSpeeds: [5, 5, 5, 5, 5, 5]
+  _minSpeed: 5
   _maxSpeed: 5
-  _minSpawnInterval: 1.5
-  _maxSpawnInterval: 3.5
+  _minSpawnInterval: 0.75
+  _maxSpawnInterval: 1.75
   _firstSpawnDelayMax: 2

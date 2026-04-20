@@ -25,6 +25,7 @@ namespace VoxelRoad.River
         {
             transform.position += new Vector3(_speed * _direction * Time.deltaTime, 0f, 0f);
             float x = transform.position.x;
+
             if ((_direction > 0f && x > _rightLimit) || (_direction < 0f && x < _leftLimit))
             {
                 if (_passenger != null && _passenger.parent == transform)
@@ -38,6 +39,9 @@ namespace VoxelRoad.River
             if (!other.CompareTag("Player")) return;
             _passenger = other.transform;
             _passenger.SetParent(transform, true);
+            // 통나무 정중앙에 스냅 (X만 보정, Z/Y는 유지)
+            var p = _passenger.position;
+            _passenger.position = new Vector3(transform.position.x, p.y, p.z);
         }
 
         private void OnTriggerExit(Collider other)

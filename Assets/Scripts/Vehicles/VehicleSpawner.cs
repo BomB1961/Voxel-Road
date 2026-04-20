@@ -3,7 +3,7 @@ using UnityEngine;
 namespace VoxelRoad.Vehicles
 {
     /// <summary>RoadLane에 부착되어 주기적으로 차량을 생성한다.
-    /// 레인당 단일 프리팹·단일 속도로 고정해 추월·관통 없이 타입별 속도 차이를 보여준다.</summary>
+    /// 레인 속도는 고정(추월·관통 방지)하되, 스폰마다 다른 프리팹을 뽑아 시각적 다양성을 확보한다.</summary>
     public sealed class VehicleSpawner : MonoBehaviour
     {
         private VehicleConfigSO _config;
@@ -11,7 +11,7 @@ namespace VoxelRoad.Vehicles
         private float _laneSpanX;
         private float _nextSpawnTime;
         private float _currentSpeed;
-        private Vehicle _lanePrefab;
+        private bool _hasPrefabs;
 
         public void Initialize(VehicleConfigSO config, float direction, float laneSpanX)
         {
@@ -19,15 +19,14 @@ namespace VoxelRoad.Vehicles
             _direction = Mathf.Sign(direction);
             _laneSpanX = laneSpanX;
 
-            // 레인 고정: 프리팹 하나 선택, 그 프리팹에 대응하는 속도 사용
-            if (_config.VehiclePrefabs != null && _config.VehiclePrefabs.Length > 0)
+            _hasPrefabs = _config.VehiclePrefabs != null && _config.VehiclePrefabs.Length > 0;
+
+            // 레인 속도만 고정: speeds 배열이 있으면 그중 랜덤, 아니면 Min/Max 랜덤
+            var speeds = _config.VehicleSpeeds;
+            if (speeds != null && speeds.Length > 0)
             {
-                int idx = Random.Range(0, _config.VehiclePrefabs.Length);
-                _lanePrefab = _config.VehiclePrefabs[idx];
-                var speeds = _config.VehicleSpeeds;
-                _currentSpeed = (speeds != null && idx < speeds.Length && speeds[idx] > 0f)
-                    ? speeds[idx]
-                    : Random.Range(_config.MinSpeed, _config.MaxSpeed);
+                float s = speeds[Random.Range(0, speeds.Length)];
+                _currentSpeed = s > 0f ? s : Random.Range(_config.MinSpeed, _config.MaxSpeed);
             }
             else
             {
@@ -38,11 +37,18 @@ namespace VoxelRoad.Vehicles
             Prewarm();
         }
 
+        private Vehicle PickPrefab()
+        {
+            if (!_hasPrefabs) return null;
+            var prefabs = _config.VehiclePrefabs;
+            return prefabs[Random.Range(0, prefabs.Length)];
+        }
+
         /// <summary>게임 시작 시 레인 전반에 차량을 미리 배치해 즉시 트래픽이 보이게 함.</summary>
         private void Prewarm()
         {
-            if (_lanePrefab == null) return;
-            const int Count = 3;
+            if (!_hasPrefabs) return;
+            const int Count = 6;
             float halfSpan = _laneSpanX * 0.5f;
             float spacing = _laneSpanX / Count;
             for (int i = 0; i < Count; i++)
@@ -56,7 +62,7 @@ namespace VoxelRoad.Vehicles
 
         private void Update()
         {
-            if (_config == null || _lanePrefab == null) return;
+            if (_config == null || !_hasPrefabs) return;
             if (Time.time < _nextSpawnTime) return;
 
             float startX = _direction > 0f ? -_laneSpanX * 0.5f - 1.5f : _laneSpanX * 0.5f + 1.5f;
@@ -68,7 +74,9 @@ namespace VoxelRoad.Vehicles
 
         private void SpawnAt(Vector3 worldPos)
         {
-            var vehicle = Instantiate(_lanePrefab, worldPos, Quaternion.identity, transform);
+            var prefab = PickPrefab();
+            if (prefab == null) return;
+            var vehicle = Instantiate(prefab, worldPos, Quaternion.identity, transform);
             // 레인 폭(1m) 안에 들어오도록 Config 의 균일 스케일 적용
             float s = _config.SpawnScale;
             if (s > 0f && Mathf.Abs(s - 1f) > 0.001f)
