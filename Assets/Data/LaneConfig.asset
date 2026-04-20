@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.World.LaneConfigSO
   _laneSpanX: 50
   _lookaheadLanes: 25
-  _lookbehindLanes: 15
+  _lookbehindLanes: 0
   _safeStartLanes: 3
   _grassLanePrefab: {fileID: 7647306433298277920, guid: 742c6e02e9fc2e74f978de5cc85b9496, type: 3}
   _roadLanePrefab: {fileID: 572463087062380600, guid: ae8d5dd0caff97e4cacf1706058c769f, type: 3}

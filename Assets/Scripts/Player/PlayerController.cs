@@ -70,8 +70,13 @@ public class PlayerController : MonoBehaviour
             case MoveDirection.Right:    dx =  1; break;
         }
         GridPosition target = _gridPos.Move(dx, dz);
-        // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
+        // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
+        if (target.Z < 0) return;
+        // 좌우 경계: LaneSpanX 절반 밖으로 이동 금지.
         var wg = WorldGenerator.Instance;
+        int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
+        if (target.X < -halfSpan || target.X >= halfSpan) return;
+        // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
         if (wg != null && wg.IsCellBlocked(target.X, target.Z)) return;
 
         if (_isMoving)

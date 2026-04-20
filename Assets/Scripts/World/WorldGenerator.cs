@@ -15,6 +15,9 @@ namespace VoxelRoad.World
 
         public static WorldGenerator Instance { get; private set; }
 
+        /// <summary>레인 가로 폭의 절반(셀 기준). 플레이어 좌우 경계 판정에 사용.</summary>
+        public int LaneHalfSpan => _config != null ? Mathf.RoundToInt(_config.LaneSpanX / 2f) : 25;
+
         private void Awake() { Instance = this; }
         private void OnDestroy() { if (Instance == this) Instance = null; }
 

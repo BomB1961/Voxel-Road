@@ -11,7 +11,7 @@ namespace VoxelRoad.CameraSystem
     {
         [Header("Main Camera")]
         [Tooltip("Crossy Road 구도: yaw=0 정면, pitch≈30°")]
-        [SerializeField] private Vector3 _mainCameraEuler = new Vector3(45f, 0f, 0f);
+        [SerializeField] private Vector3 _mainCameraEuler = new Vector3(60f, 0f, 0f);
         [SerializeField] private bool _orthographic = true;
         [SerializeField] private float _orthographicSize = 5f;
         [SerializeField] private float _fieldOfView = 40f;
@@ -19,7 +19,7 @@ namespace VoxelRoad.CameraSystem
         [Header("Follow")]
         [SerializeField] private string _playerTag = "Player";
         [Tooltip("Player 기준 카메라 위치. Y는 높이, Z는 뒤 거리.")]
-        [SerializeField] private Vector3 _followOffset = new Vector3(0f, 10f, -8f);
+        [SerializeField] private Vector3 _followOffset = new Vector3(0f, 20f, -6f);
         [SerializeField] private Vector3 _positionDamping = new Vector3(1.5f, 0f, 0.3f);
 
         private void OnValidate() { if (isActiveAndEnabled) Apply(); }
