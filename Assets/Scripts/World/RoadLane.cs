@@ -36,25 +36,31 @@ namespace VoxelRoad.World
             for (int i = _markerRoot.childCount - 1; i >= 0; i--)
                 Destroy(_markerRoot.GetChild(i).gameObject);
 
-            // 중앙 점선: 2타일 간격
+            // 차선 점선: 차량(레인 중앙 주행)의 양옆에 오도록 레인 경계(±0.5)에 두 줄 배치.
+            // 인접 Road 레인끼리는 같은 worldZ에 겹쳐 그려지지만 동일 형상이라 한 줄로 보임.
             int halfSpan = Mathf.RoundToInt(_laneSpanX / 2f);
-            for (int x = -halfSpan; x < halfSpan; x += 2)
+            float[] rowZs = new[] { -0.5f, 0.5f };
+            for (int row = 0; row < rowZs.Length; row++)
             {
-                GameObject marker;
-                if (_markerSegment != null)
+                float zOffset = rowZs[row];
+                for (int x = -halfSpan; x < halfSpan; x += 2)
                 {
-                    marker = Instantiate(_markerSegment, _markerRoot);
+                    GameObject marker;
+                    if (_markerSegment != null)
+                    {
+                        marker = Instantiate(_markerSegment, _markerRoot);
+                    }
+                    else
+                    {
+                        marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        marker.transform.SetParent(_markerRoot, false);
+                        var mr = marker.GetComponent<MeshRenderer>();
+                        mr.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = Color.white };
+                        Destroy(marker.GetComponent<Collider>());
+                    }
+                    marker.transform.localPosition = new Vector3(x + 0.5f, 0.01f, zOffset);
+                    marker.transform.localScale = new Vector3(0.6f, 0.02f, 0.08f);
                 }
-                else
-                {
-                    marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    marker.transform.SetParent(_markerRoot, false);
-                    var mr = marker.GetComponent<MeshRenderer>();
-                    mr.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = Color.white };
-                    Destroy(marker.GetComponent<Collider>());
-                }
-                marker.transform.localPosition = new Vector3(x + 0.5f, 0.01f, 0f);
-                marker.transform.localScale = new Vector3(0.6f, 0.02f, 0.08f);
             }
         }
     }
