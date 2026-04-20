@@ -9,6 +9,7 @@ namespace VoxelRoad.River
         private float _direction;
         private float _laneSpanX;
         private float _nextSpawnTime;
+        private float _currentSpeed;
         private bool _initialized;
 
         public void Initialize(LogConfigSO config, float direction, float laneSpanX)
@@ -16,6 +17,8 @@ namespace VoxelRoad.River
             _config = config;
             _direction = Mathf.Sign(direction);
             _laneSpanX = laneSpanX;
+            // 한 강 레인 내 모든 통나무는 동일 속도 → 추월·관통 현상 방지
+            _currentSpeed = Random.Range(config.MinSpeed, config.MaxSpeed);
             _nextSpawnTime = Time.time + Random.Range(0f, config.FirstSpawnDelayMax);
             _initialized = true;
         }
@@ -37,9 +40,8 @@ namespace VoxelRoad.River
             float s = _config.SpawnScale;
             if (s > 0f && Mathf.Abs(s - 1f) > 0.001f)
                 logGO.transform.localScale = new Vector3(s, s, s);
-            float speed = Random.Range(_config.MinSpeed, _config.MaxSpeed);
             var logComp = logGO.GetComponent<Log>();
-            if (logComp != null) logComp.Launch(speed, _direction, _laneSpanX);
+            if (logComp != null) logComp.Launch(_currentSpeed, _direction, _laneSpanX);
 
             _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval);
         }
