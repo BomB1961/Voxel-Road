@@ -14,6 +14,17 @@ namespace VoxelRoad.World
 
         public override LaneType Type => LaneType.Road;
 
+        // 도로 청크 내부 경계에만 점선을 그리기 위한 플래그. 기본값은 양쪽 모두 그림.
+        private bool _drawBackEdge = true;   // localZ = -0.5 (이전 레인과의 경계)
+        private bool _drawFrontEdge = true;  // localZ = +0.5 (다음 레인과의 경계)
+
+        /// <summary>도로 청크 내 위치에 따른 경계 점선 표시 여부. 청크 맨 앞/뒤는 바깥쪽 점선 생략.</summary>
+        public void SetLaneEdges(bool drawBack, bool drawFront)
+        {
+            _drawBackEdge = drawBack;
+            _drawFrontEdge = drawFront;
+        }
+
         protected override void Build()
         {
             // 차량 진행 방향: 짝수 zIndex → +X, 홀수 → -X
@@ -39,10 +50,12 @@ namespace VoxelRoad.World
             // 차선 점선: 차량(레인 중앙 주행)의 양옆에 오도록 레인 경계(±0.5)에 두 줄 배치.
             // 인접 Road 레인끼리는 같은 worldZ에 겹쳐 그려지지만 동일 형상이라 한 줄로 보임.
             int halfSpan = Mathf.RoundToInt(_laneSpanX / 2f);
-            float[] rowZs = new[] { -0.5f, 0.5f };
-            for (int row = 0; row < rowZs.Length; row++)
+            var rows = new System.Collections.Generic.List<float>(2);
+            if (_drawBackEdge) rows.Add(-0.5f);
+            if (_drawFrontEdge) rows.Add(0.5f);
+            for (int row = 0; row < rows.Count; row++)
             {
-                float zOffset = rowZs[row];
+                float zOffset = rows[row];
                 for (int x = -halfSpan; x < halfSpan; x += 2)
                 {
                     GameObject marker;

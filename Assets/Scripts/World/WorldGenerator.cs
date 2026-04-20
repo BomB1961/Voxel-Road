@@ -66,7 +66,7 @@ namespace VoxelRoad.World
             LaneType type = ChooseNextChunkType();
             int length = Random.Range(_config.MinChunkLength(type), _config.MaxChunkLength(type) + 1);
             for (int i = 0; i < length; i++)
-                SpawnLane(_furthestSpawnedZ + 1, type);
+                SpawnLane(_furthestSpawnedZ + 1, type, i == 0, i == length - 1);
             _lastChunkType = type;
         }
 
@@ -89,7 +89,7 @@ namespace VoxelRoad.World
             return LaneType.River;
         }
 
-        private void SpawnLane(int zIndex, LaneType type)
+        private void SpawnLane(int zIndex, LaneType type, bool isChunkStart = false, bool isChunkEnd = false)
         {
             // 동일 zIndex 에 이미 레인이 있으면 제거 후 재생성 (중복 겹침 방지)
             if (_lanes.TryGetValue(zIndex, out BaseLane existingLane))
@@ -114,7 +114,10 @@ namespace VoxelRoad.World
             {
                 var prefab = _config.RoadLanePrefab;
                 if (prefab == null) { Debug.LogError("[WorldGenerator] RoadLane prefab 없음"); return; }
-                lane = Instantiate(prefab, transform);
+                var road = Instantiate(prefab, transform);
+                // 청크 바깥 경계(잔디/강과 맞닿는 면)의 점선은 생략 → Initialize 전에 세팅
+                road.SetLaneEdges(drawBack: !isChunkStart, drawFront: !isChunkEnd);
+                lane = road;
             }
             else if (type == LaneType.River)
             {
