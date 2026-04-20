@@ -21,6 +21,31 @@ namespace VoxelRoad.River
             _currentSpeed = Random.Range(config.MinSpeed, config.MaxSpeed);
             _nextSpawnTime = Time.time + Random.Range(0f, config.FirstSpawnDelayMax);
             _initialized = true;
+            Prewarm();
+        }
+
+        /// <summary>게임 시작 시 레인 전반에 통나무를 미리 배치해 즉시 탑승 가능하게 함.</summary>
+        private void Prewarm()
+        {
+            var prefabs = _config.LogPrefabs;
+            if (prefabs == null || prefabs.Length == 0) return;
+            const int Count = 3;
+            float halfSpan = _laneSpanX * 0.5f;
+            float spacing = _laneSpanX / Count;
+            for (int i = 0; i < Count; i++)
+            {
+                var prefab = prefabs[Random.Range(0, prefabs.Length)];
+                if (prefab == null) continue;
+                float baseX = -halfSpan + spacing * (i + 0.5f);
+                float jitter = Random.Range(-spacing * 0.25f, spacing * 0.25f);
+                var logGO = Instantiate(prefab, transform);
+                logGO.transform.localPosition = new Vector3(baseX + jitter, 0f, 0f);
+                float s = _config.SpawnScale;
+                if (s > 0f && Mathf.Abs(s - 1f) > 0.001f)
+                    logGO.transform.localScale = new Vector3(s, s, s);
+                var logComp = logGO.GetComponent<Log>();
+                if (logComp != null) logComp.Launch(_currentSpeed, _direction, _laneSpanX);
+            }
         }
 
         private void Update()
