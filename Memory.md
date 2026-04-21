@@ -127,6 +127,25 @@
 - [x] **카메라 배경**: Main Camera `clearFlags=SolidColor`, `backgroundColor=(0.66,0.85,0.95)` 하늘색. Skybox·무관한 배경 제거
 - [x] Play 검증: Grass(3)→Road(2)→Grass(2)→River(3)→Grass(2)→Road(2)→Grass(1)→Road(3) 패턴 확인, blocked cell 이동 차단(reflection로 gridX 변화 없음) 검증 ✓
 
+### River 레인 정밀 튜닝 ✅ (2026-04-21)
+- [x] **통나무 길이 3그리드 고정**: `LogConfig.lengthScale = 4.5248868` → 월드 X 정확히 3.0 유닛 [계산: 3.0 / (0.85 × 0.78)]
+- [x] **스폰 밀도 감소**: Log 간격 3~5초, Prewarm 레인당 4개, SpawnScale 0.85
+- [x] **통나무 너비 정상화**: `WidthScale=3.5`, BoxCollider `size.z = 0.26` (구 0.9 → 레인 넘침 방지)
+- [x] **탑승 판정 타이밍 버그**: `Log.Launch()`에서 `col.bounds.extents.x` 는 스폰 직후 미반영 → `col.size.x * transform.lossyScale.x * 0.5f` 직접 계산
+- [x] **Z축 직선 점프**: 통나무 출발 시 `dx == 0` 이면 `to.x = from.x`로 월드 X 고정 (대각선 점프 방지)
+- [x] **좌우 이동 허용**: 기존 `prevParent != null && dx != 0 return` 제거
+- [x] **`_gridPos.X` 뱅커 반올림 버그**: `RoundToInt(x - 0.5f)` 는 홀수 정수 X(1,3,5,-1)에서 1칸 오차 → `RoundToInt(x)` 로 수정
+- [x] **log-relative 좌우 점프**: 사전 `VelocityX * _moveDuration` 보정은 코루틴 정수 프레임 오차로 드리프트 어긋남 → `prevParent.position.x + Lerp(fromRel, toRel, t)` 매 프레임 보간으로 전환
+- [x] **맵 경계 자동 하차·익사**: halfSpan 초과 시 언패런트 → clamp → drown
+- [x] **착지 후 X 그리드 재스냅**: 지면 착지 시 드리프트 누적 방지
+- [x] **BlobShadow**: Sprites/Default 원형 그림자, 모든 차량·통나무 적용
+- [x] **GroundFill**: 대형 평면(y=-0.1) 레인 사이 깜빡임 방지
+
+### ⚠ 미해결 이슈 (커밋 `368f836` 기준)
+- **통나무 전진 점프 착지 X 불안정**: 통나무 → 다른 통나무로 dz=1 점프 시 매 점프 도착 X가 미세하게 다름. `to.x = from.x`로 고정했음에도 여전함.
+  - 가설: `from.x = transform.position.x`가 Update에서 통나무 드리프트로 이미 비정수 상태 → 매번 다른 기준점
+  - 다음 세션 시도 방향: `from.x`를 출발 시점 log-relative 기준으로 계산하거나, `_gridPos.X` 정수로 스냅 후 출발
+
 ### Step 6 — Rail + 기차 (대기)
 ### Step 7 — 독수리 타임아웃 사망 (대기)
 ### Step 8 — 점수 + UI (대기)
@@ -149,4 +168,4 @@
 1. 이 파일(`Memory.md`)을 읽어 마지막 완료 Step 확인
 2. `mcpforunity://instances` 리소스로 Voxel Road 포트 확인 후 `set_active_instance` 호출
 3. `execute_code`로 `Application.dataPath` 검증 (Voxel Road 확인)
-4. 미완료 Step부터 재개 — 현재 **Step 6 (Rail + 기차)**
+4. 먼저 **통나무 전진 점프 착지 X 불안정** 이슈 해결 후 **Step 6 (Rail + 기차)** 로 진행
