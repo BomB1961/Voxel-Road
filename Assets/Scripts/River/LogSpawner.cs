@@ -48,7 +48,7 @@ namespace VoxelRoad.River
         private void Prewarm()
         {
             if (!_hasPrefabs) return;
-            const int Count = 6;
+            const int Count = 4;
             float halfSpan = _laneSpanX * 0.5f;
             float spacing = _laneSpanX / Count;
             for (int i = 0; i < Count; i++)
