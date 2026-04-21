@@ -6,6 +6,8 @@ using VoxelRoad.World;
 /// <summary>플레이어 그리드 이동·점프 연출·입력 큐 처리, 사망(차량·익사) 시 입력 차단.</summary>
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance { get; private set; }
+
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private float _tileSize = 1f;
     [SerializeField] private float _moveDuration = 0.12f;
@@ -18,6 +20,18 @@ public class PlayerController : MonoBehaviour
 
     public GridPosition GridPos => _gridPos;
     public int MaxZ { get; private set; }
+    /// <summary>점프 호 이동 중이면 true. Log가 Trigger Enter를 무시하는 데 사용.</summary>
+    public bool IsMoving => _isMoving;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
     private void Start()
     {
