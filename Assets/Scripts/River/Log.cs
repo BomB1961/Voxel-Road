@@ -37,15 +37,20 @@ namespace VoxelRoad.River
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
-            // 점프 호 이동 중에는 콜라이더가 스쳐도 탑승하지 않음.
-            // 착지 후 PlayerController.TryBoardLog()가 정확히 처리한다.
+            // 점프 호 이동 중에는 탑승하지 않음. 착지 후 TryBoardLog()가 처리.
             if (PlayerController.Instance != null && PlayerController.Instance.IsMoving) return;
 
+            // 플레이어 Z가 통나무 Z 범위(폭 방향) 안에 있어야 탑승 (정지 중 통나무가 흘러올 때)
+            var col = GetComponent<BoxCollider>();
+            if (col != null)
+            {
+                Bounds b = col.bounds;
+                if (other.transform.position.z < b.min.z || other.transform.position.z > b.max.z) return;
+            }
+
             _passenger = other.transform;
+            // X 스냅 없이 현재 위치 그대로 탑승
             _passenger.SetParent(transform, true);
-            // 통나무 정중앙에 스냅 (X만 보정, Z/Y는 유지)
-            var p = _passenger.position;
-            _passenger.position = new Vector3(transform.position.x, p.y, p.z);
         }
 
         private void OnTriggerExit(Collider other)

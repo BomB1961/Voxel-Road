@@ -161,23 +161,29 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    /// <summary>착지 지점에 통나무가 있으면 부모로 붙이고 X를 통나무 중심에 스냅.
-    /// 같은 통나무 내 연속 이동이나 Trigger Enter 미발생 케이스에서도 정확히 중앙에 올라탄다.</summary>
+    /// <summary>착지 지점에 통나무가 있으면 부모로 붙어 함께 이동.
+    /// 플레이어 착지 Z가 통나무 Z 범위(폭 방향) 안에 있어야만 탑승 — 인접 통나무 오탑승 방지.
+    /// X 스냅 없음: 착지 위치 그대로 통나무에 올라타 자연스럽게 이동.</summary>
     private void TryBoardLog()
     {
         var wg = WorldGenerator.Instance;
         if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
 
+        // X halfExtent 크게(통나무 길이 포함), Z halfExtent 매우 작게(정확한 Z 착지 판정)
         var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
-            new Vector3(0.2f, 0.2f, 0.2f), Quaternion.identity,
+            new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
             var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
             if (log == null) continue;
+
+            // 플레이어 Z가 통나무 콜라이더 Z 범위(폭 방향) 안에 있어야 탑승
+            Bounds b = hits[i].bounds;
+            if (transform.position.z < b.min.z || transform.position.z > b.max.z) continue;
+
+            // X 스냅 없이 착지 위치 그대로 탑승 (통나무 이동 시 같이 따라감)
             transform.SetParent(log.transform, true);
-            var p = transform.position;
-            transform.position = new Vector3(log.transform.position.x, p.y, p.z);
             return;
         }
     }
