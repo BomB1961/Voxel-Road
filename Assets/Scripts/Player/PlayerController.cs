@@ -136,9 +136,9 @@ public class PlayerController : MonoBehaviour
         if (prevParent != null)
         {
             transform.SetParent(null, true);
-            // 통나무 표면에 스냅됐던 Y를 지면(0)으로 복원
             var wp = transform.position;
-            transform.position = new Vector3(wp.x, 0f, wp.z);
+            // Y: 통나무 표면 스냅 복원, X: 그리드 정수로 스냅 → 대각선 점프 방지
+            transform.position = new Vector3(_gridPos.X * _tileSize, 0f, wp.z);
         }
 
         Vector3 from = transform.position;
