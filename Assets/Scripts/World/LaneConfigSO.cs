@@ -32,13 +32,21 @@ namespace VoxelRoad.World
         [Tooltip("잔디 데코 인스턴스 스케일 배율 (Player 대비 크게 보이도록).")]
         [SerializeField] private float _grassDecorScale = 1.4f;
 
-        [Header("Weights")]
+        [Header("Weights (미사용 — Balance Quota로 대체)")]
         [Range(0f, 1f)]
         [SerializeField] private float _grassWeight = 0.4f;
         [Range(0f, 1f)]
         [SerializeField] private float _roadWeight = 0.35f;
         [Range(0f, 1f)]
         [SerializeField] private float _riverWeight = 0.25f;
+
+        [Header("Balance Quota (덱 1주기당 각 타입 청크 수)")]
+        [Tooltip("덱 1사이클에 잔디 청크가 몇 개 포함될지.")]
+        [SerializeField] private int _grassQuota = 2;
+        [Tooltip("덱 1사이클에 도로 청크가 몇 개 포함될지.")]
+        [SerializeField] private int _roadQuota = 2;
+        [Tooltip("덱 1사이클에 강 청크가 몇 개 포함될지.")]
+        [SerializeField] private int _riverQuota = 2;
 
         [Header("Chunk Length (per lane type)")]
         [SerializeField] private Vector2Int _grassChunk = new Vector2Int(1, 2);
@@ -58,6 +66,9 @@ namespace VoxelRoad.World
         public float GrassWeight => _grassWeight;
         public float RoadWeight => _roadWeight;
         public float RiverWeight => _riverWeight;
+        public int GrassQuota => _grassQuota;
+        public int RoadQuota => _roadQuota;
+        public int RiverQuota => _riverQuota;
 
         public int MinChunkLength(LaneType t) => t switch
         {

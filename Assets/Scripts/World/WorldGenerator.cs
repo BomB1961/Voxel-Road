@@ -10,6 +10,7 @@ namespace VoxelRoad.World
         [SerializeField] private Transform _player;
 
         private readonly Dictionary<int, BaseLane> _lanes = new();
+        private readonly List<LaneType> _deck = new();
         private int _furthestSpawnedZ = -1;
         private LaneType _lastChunkType;
 
@@ -70,23 +71,42 @@ namespace VoxelRoad.World
             _lastChunkType = type;
         }
 
+        /// <summary>덱이 비어 있으면 쿼터 기반으로 채우고 섞는다.</summary>
+        private void RefillDeck()
+        {
+            _deck.Clear();
+            for (int i = 0; i < _config.GrassQuota; i++) _deck.Add(LaneType.Grass);
+            for (int i = 0; i < _config.RoadQuota; i++) _deck.Add(LaneType.Road);
+            for (int i = 0; i < _config.RiverQuota; i++) _deck.Add(LaneType.River);
+            // Fisher-Yates 셔플
+            for (int i = _deck.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (_deck[i], _deck[j]) = (_deck[j], _deck[i]);
+            }
+        }
+
         private LaneType ChooseNextChunkType()
         {
-            // 직전 청크와 다른 타입으로 강제 → 자연스러운 패턴 변화
-            float gw = _config.GrassWeight;
-            float rw = _config.RoadWeight;
-            float vw = _config.RiverWeight;
-            // 직전 타입 가중치 제거
-            if (_lastChunkType == LaneType.Grass) gw = 0f;
-            else if (_lastChunkType == LaneType.Road) rw = 0f;
-            else if (_lastChunkType == LaneType.River) vw = 0f;
-
-            float total = gw + rw + vw;
-            if (total <= 0f) return LaneType.Grass;
-            float roll = Random.value * total;
-            if (roll < gw) return LaneType.Grass;
-            if (roll < gw + rw) return LaneType.Road;
-            return LaneType.River;
+            // 직전 타입과 같으면 덱 앞에서 건너뛰어 교착 방지
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                if (_deck.Count == 0) RefillDeck();
+                LaneType candidate = _deck[0];
+                if (candidate != _lastChunkType)
+                {
+                    _deck.RemoveAt(0);
+                    return candidate;
+                }
+                // 같은 타입이면 뒤로 보내고 다음 카드 시도
+                _deck.RemoveAt(0);
+                _deck.Add(candidate);
+            }
+            // 두 번 다 같으면 그냥 사용 (덱이 단일 타입으로만 채워진 극단 케이스)
+            if (_deck.Count == 0) RefillDeck();
+            LaneType fallback = _deck[0];
+            _deck.RemoveAt(0);
+            return fallback;
         }
 
         private void SpawnLane(int zIndex, LaneType type, bool isChunkStart = false, bool isChunkEnd = false)
