@@ -17,6 +17,16 @@ namespace VoxelRoad.River
         /// <summary>X축 속도(부호 포함). 점프 착지 지점 예측에 사용.</summary>
         public float VelocityX => _speed * _direction;
 
+        /// <summary>통나무 비주얼 표면의 월드 Y 좌표. 탑승 시 플레이어 Y 스냅에 사용.</summary>
+        public float SurfaceY
+        {
+            get
+            {
+                var r = GetComponentInChildren<Renderer>();
+                return r != null ? r.bounds.max.y : transform.position.y;
+            }
+        }
+
         public void Launch(float speed, float direction, float laneSpanX)
         {
             _speed = speed;
@@ -56,6 +66,14 @@ namespace VoxelRoad.River
 
             _passenger = other.transform;
             _passenger.SetParent(transform, true);
+            SnapToSurface(_passenger);
+        }
+
+        /// <summary>탑승자를 통나무 비주얼 표면 위로 Y 스냅 (끼임 방지).</summary>
+        public void SnapToSurface(Transform passenger)
+        {
+            var p = passenger.position;
+            passenger.position = new Vector3(p.x, SurfaceY, p.z);
         }
 
         private void OnTriggerExit(Collider other)

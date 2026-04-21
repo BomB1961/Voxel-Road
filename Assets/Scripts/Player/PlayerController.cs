@@ -132,7 +132,12 @@ public class PlayerController : MonoBehaviour
         // 이동 시작 시점에 통나무로부터 언패런트 (이동은 그리드 기준)
         Transform prevParent = transform.parent;
         if (prevParent != null)
+        {
             transform.SetParent(null, true);
+            // 통나무 표면에 스냅됐던 Y를 지면(0)으로 복원
+            var wp = transform.position;
+            transform.position = new Vector3(wp.x, 0f, wp.z);
+        }
 
         Vector3 from = transform.position;
         Vector3 to = target.ToWorldPosition(_tileSize);
@@ -216,6 +221,7 @@ public class PlayerController : MonoBehaviour
             if (dx > AlignmentTolerance || dz > AlignmentTolerance) continue;
 
             transform.SetParent(log.transform, true);
+            log.SnapToSurface(transform);
             return;
         }
     }
