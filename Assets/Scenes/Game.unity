@@ -453,7 +453,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 0
-  m_Antialiasing: 0
+  m_Antialiasing: 2
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -483,6 +483,7 @@ GameObject:
   m_Component:
   - component: {fileID: 675128688}
   - component: {fileID: 675128687}
+  - component: {fileID: 675128689}
   m_Layer: 0
   m_Name: WorldRoot
   m_TagString: Untagged
@@ -519,6 +520,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &675128689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 675128686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cc3e2e965ba74c4d90e7f1bbd88726b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.World.GroundFill
+  _player: {fileID: 168922183}
+  _fillColor: {r: 0.25, g: 0.45, b: 0.18, a: 1}
+  _sizeX: 300
+  _sizeZ: 400
 --- !u!1 &859990657
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,8 +604,8 @@ Light:
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
+    m_Bias: 0.02
+    m_NormalBias: 0.15
     m_NearPlane: 0.2
     m_CullingMatrixOverride:
       e00: 1
