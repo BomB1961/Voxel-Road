@@ -21,9 +21,9 @@ MonoBehaviour:
   - 3.5
   _minSpeed: 2
   _maxSpeed: 3.5
-  _minSpawnInterval: 1
-  _maxSpawnInterval: 1.75
+  _minSpawnInterval: 2.5
+  _maxSpawnInterval: 4
   _firstSpawnDelayMax: 2
   _spawnScale: 0.85
-  _lengthScale: 2.5
+  _lengthScale: 6
   _widthScale: 3.5

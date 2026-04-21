@@ -137,14 +137,24 @@ public class PlayerController : MonoBehaviour
         {
             transform.SetParent(null, true);
             var wp = transform.position;
-            // Y: 통나무 표면 스냅 복원, X: 그리드 정수로 스냅 → 대각선 점프 방지
-            transform.position = new Vector3(_gridPos.X * _tileSize, 0f, wp.z);
+            transform.position = new Vector3(wp.x, 0f, wp.z); // Y만 리셋, X는 유지
         }
 
         Vector3 from = transform.position;
         Vector3 to = target.ToWorldPosition(_tileSize);
-        // 착지 지점이 River면 통나무 예측 위치로 점프 목표 X를 보정해 정중앙 안착
-        AdjustJumpTargetForLog(ref to, target);
+
+        if (prevParent != null)
+        {
+            // 로그에서 출발: to.x = from.x 유지 → 완전 Z축 직선 점프
+            to.x = from.x;
+        }
+        else
+        {
+            // 지면에서 출발: X 비정수면 그리드로 재스냅 후 로그 X 보정
+            from.x = _gridPos.X * _tileSize;
+            transform.position = new Vector3(from.x, from.y, from.z);
+            AdjustJumpTargetForLog(ref to, target);
+        }
         float elapsed = 0f;
 
         while (elapsed < _moveDuration)
@@ -163,6 +173,11 @@ public class PlayerController : MonoBehaviour
 
         TryBoardLog();
         CheckRiverArrival();
+
+        // 땅(비강) 착지 시 X를 그리드 정수로 재스냅 — 로그 드리프트 누적 방지
+        var wgSnap = WorldGenerator.Instance;
+        if (transform.parent == null && wgSnap != null && wgSnap.GetLaneTypeAt(_gridPos.Z) != LaneType.River)
+            transform.position = new Vector3(_gridPos.X * _tileSize, transform.position.y, transform.position.z);
 
         if (GameManager.IsAlive && _queuedTarget.HasValue)
         {
