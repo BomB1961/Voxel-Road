@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4404664688307411011}
   - component: {fileID: 2914599586111675530}
   - component: {fileID: 1850947280840259272}
+  - component: {fileID: 6660018153206831207}
   m_Layer: 0
   m_Name: Log_Stack
   m_TagString: Untagged
@@ -68,6 +69,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.River.Log
   _boundsPadding: 2.5
+--- !u!114 &6660018153206831207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2118961537184139461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcfd422942284b240820c3fdfca527a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Common.BlobShadow
+  _radius: 0.45
+  _opacity: 0.4
 --- !u!1001 &2170026896874320424
 PrefabInstance:
   m_ObjectHideFlags: 0

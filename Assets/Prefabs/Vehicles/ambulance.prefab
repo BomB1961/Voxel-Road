@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2493304682942553402}
   - component: {fileID: 1284958234272234167}
   - component: {fileID: 3174421178995877256}
+  - component: {fileID: 8576084375357045473}
   m_Layer: 0
   m_Name: ambulance
   m_TagString: Untagged
@@ -68,6 +69,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Vehicles.Vehicle
   _boundsPadding: 2
+--- !u!114 &8576084375357045473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 92015700386638160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcfd422942284b240820c3fdfca527a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Common.BlobShadow
+  _radius: 0.45
+  _opacity: 0.4
 --- !u!1001 &3152444822517940457
 PrefabInstance:
   m_ObjectHideFlags: 0

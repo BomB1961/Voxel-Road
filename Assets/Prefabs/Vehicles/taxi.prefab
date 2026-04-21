@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8303487466472828611}
   - component: {fileID: 8042072052081995502}
   - component: {fileID: 2173246624138324538}
+  - component: {fileID: 3068200775187163774}
   m_Layer: 0
   m_Name: taxi
   m_TagString: Untagged
@@ -68,6 +69,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Vehicles.Vehicle
   _boundsPadding: 2
+--- !u!114 &3068200775187163774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2054471515029465432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bcfd422942284b240820c3fdfca527a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Common.BlobShadow
+  _radius: 0.45
+  _opacity: 0.4
 --- !u!1001 &6231390777506152980
 PrefabInstance:
   m_ObjectHideFlags: 0
