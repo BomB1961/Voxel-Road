@@ -42,8 +42,9 @@ namespace VoxelRoad.River
             var col = GetComponent<BoxCollider>();
             if (col != null)
             {
-                _halfWidthX  = col.bounds.extents.x;
-                _halfLengthZ = col.bounds.extents.z;
+                // bounds.extents는 스케일 변경 직후 미반영될 수 있으므로 직접 계산
+                _halfWidthX  = col.size.x * transform.lossyScale.x * 0.5f;
+                _halfLengthZ = col.size.z * transform.lossyScale.z * 0.5f;
             }
             else
             {
