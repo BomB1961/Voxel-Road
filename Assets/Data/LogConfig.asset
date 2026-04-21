@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.River.LogConfigSO
   _logPrefabs:
   - {fileID: 3724370541441369062, guid: 044f8f59868c1a345ba1fef684b66d61, type: 3}
-  - {fileID: 4636406715644099476, guid: 79a455972a1fa8642ad833624d191699, type: 3}
-  - {fileID: 2118961537184139461, guid: 66554633e70ddb443a6ccc28bf3bf16f, type: 3}
-  - {fileID: 220960224968376190, guid: 849cdadb587041546a41c559dd5ae660, type: 3}
-  _logSpeeds: [2, 2.5, 3, 3.5]
+  _logSpeeds:
+  - 2
+  - 2.5
+  - 3
+  - 3.5
   _minSpeed: 2
   _maxSpeed: 3.5
   _minSpawnInterval: 1
   _maxSpawnInterval: 1.75
   _firstSpawnDelayMax: 2
+  _spawnScale: 0.85
+  _lengthScale: 2.5

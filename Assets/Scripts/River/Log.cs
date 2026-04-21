@@ -13,34 +13,49 @@ namespace VoxelRoad.River
         private float _leftLimit;
         private float _rightLimit;
         private Transform _passenger;
+        private BoxCollider _col;
 
         /// <summary>X축 속도(부호 포함). 점프 착지 지점 예측에 사용.</summary>
         public float VelocityX => _speed * _direction;
 
-        /// <summary>통나무 비주얼 표면의 월드 Y 좌표. 탑승 시 플레이어 Y 스냅에 사용.</summary>
+        /// <summary>BoxCollider 월드 X 절반 폭. 탑승 가능 X 범위 판정에 사용.</summary>
+        public float HalfWidthX
+        {
+            get
+            {
+                if (_col == null) _col = GetComponent<BoxCollider>();
+                return _col != null ? _col.bounds.extents.x : 1.5f;
+            }
+        }
+
+        /// <summary>비주얼 표면 월드 Y. 탑승 시 플레이어 Y 스냅에 사용.</summary>
         public float SurfaceY
         {
             get
             {
-                var r = GetComponentInChildren<Renderer>();
-                return r != null ? r.bounds.max.y : transform.position.y;
+                foreach (var r in GetComponentsInChildren<Renderer>(true))
+                {
+                    if (r.gameObject.name == "_BlobShadow") continue;
+                    return r.bounds.max.y;
+                }
+                return transform.position.y;
             }
         }
 
         public void Launch(float speed, float direction, float laneSpanX)
         {
+            _col = GetComponent<BoxCollider>();
             _speed = speed;
             _direction = Mathf.Sign(direction);
             _halfLaneSpan = laneSpanX * 0.5f;
-            _leftLimit = -_halfLaneSpan - _boundsPadding;
-            _rightLimit = _halfLaneSpan + _boundsPadding;
+            _leftLimit  = -_halfLaneSpan - _boundsPadding;
+            _rightLimit =  _halfLaneSpan + _boundsPadding;
         }
 
         private void Update()
         {
             transform.position += new Vector3(_speed * _direction * Time.deltaTime, 0f, 0f);
             float x = transform.position.x;
-
             if ((_direction > 0f && x > _rightLimit) || (_direction < 0f && x < _leftLimit))
             {
                 if (_passenger != null && _passenger.parent == transform)
@@ -52,28 +67,27 @@ namespace VoxelRoad.River
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
-            // 점프 호 이동 중에는 탑승하지 않음. 착지 후 TryBoardLog()가 처리.
             if (PlayerController.Instance != null && PlayerController.Instance.IsMoving) return;
-
-            // 레인 경계 밖(패딩 영역)에 있는 통나무는 탑승 금지
             if (Mathf.Abs(transform.position.x) > _halfLaneSpan) return;
 
-            // 플레이어와 통나무 중심이 X·Z 모두 반칸 이내로 정렬돼야 탑승 (일직선 강제)
-            const float alignmentTolerance = 0.5f;
             float dx = Mathf.Abs(other.transform.position.x - transform.position.x);
             float dz = Mathf.Abs(other.transform.position.z - transform.position.z);
-            if (dx > alignmentTolerance || dz > alignmentTolerance) return;
+            if (dx > HalfWidthX || dz > 0.6f) return;
 
             _passenger = other.transform;
             _passenger.SetParent(transform, true);
             SnapToSurface(_passenger);
         }
 
-        /// <summary>탑승자를 통나무 비주얼 표면 위로 Y 스냅 (끼임 방지).</summary>
+        /// <summary>탑승자를 통나무 비주얼 표면 위로 Y 스냅.</summary>
         public void SnapToSurface(Transform passenger)
         {
-            var p = passenger.position;
-            passenger.position = new Vector3(p.x, SurfaceY, p.z);
+            float sy = SurfaceY;
+            if (sy > 0.001f)
+            {
+                var p = passenger.position;
+                passenger.position = new Vector3(p.x, sy, p.z);
+            }
         }
 
         private void OnTriggerExit(Collider other)

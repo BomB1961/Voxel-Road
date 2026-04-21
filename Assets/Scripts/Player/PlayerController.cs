@@ -99,6 +99,8 @@ public class PlayerController : MonoBehaviour
             case MoveDirection.Left:     dx = -1; break;
             case MoveDirection.Right:    dx =  1; break;
         }
+        // 통나무 탑승 중 좌우 이동 차단
+        if (dx != 0 && transform.parent != null) return;
         // 이동 중이면 진행 중인 도착 셀을 기준으로 다음 칸 계산 (연타 시 2칸 점프 방지).
         GridPosition basePos = _isMoving ? _moveTarget : _gridPos;
         GridPosition target = basePos.Move(dx, dz);
@@ -179,7 +181,7 @@ public class PlayerController : MonoBehaviour
 
         float halfSpan = wg.LaneHalfSpan;
         var hits = Physics.OverlapBox(to + Vector3.up * 0.3f,
-            new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
+            new Vector3(0.6f, 0.4f, 0.6f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
@@ -189,8 +191,8 @@ public class PlayerController : MonoBehaviour
             float predictedLogX = log.transform.position.x + log.VelocityX * _moveDuration;
             // 착지 시점에 통나무가 레인 경계 밖이면 보정 대상에서 제외 (끝자락 오탑승 방지)
             if (Mathf.Abs(predictedLogX) > halfSpan) continue;
-            // 통나무 중심이 점프 목표와 충분히 가까울 때만 보정 — 일직선 정렬 강제
-            if (Mathf.Abs(predictedLogX - to.x) > AlignmentTolerance) continue;
+            // 점프 목표와 통나무 예측 위치가 0.6 이내일 때만 보정 — 멀리 있는 통나무로 끌려가지 않게
+            if (Mathf.Abs(predictedLogX - to.x) > 0.6f) continue;
 
             to.x = predictedLogX;
             return;
@@ -205,20 +207,18 @@ public class PlayerController : MonoBehaviour
 
         float halfSpan = wg.LaneHalfSpan;
         var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
-            new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
+            new Vector3(0.6f, 0.4f, 0.6f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
         for (int i = 0; i < hits.Length; i++)
         {
             var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
             if (log == null) continue;
 
-            // 레인 경계 밖(패딩 영역)에 있는 통나무는 탑승 금지
             if (Mathf.Abs(log.transform.position.x) > halfSpan) continue;
 
-            // 통나무 중심과 플레이어가 X·Z 모두 충분히 정렬돼야 탑승
             float dx = Mathf.Abs(transform.position.x - log.transform.position.x);
             float dz = Mathf.Abs(transform.position.z - log.transform.position.z);
-            if (dx > AlignmentTolerance || dz > AlignmentTolerance) continue;
+            if (dx > log.HalfWidthX || dz > 0.6f) continue;
 
             transform.SetParent(log.transform, true);
             log.SnapToSurface(transform);
@@ -226,8 +226,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    /// <summary>탑승 허용 정렬 오차(반칸). 통나무 중심과 플레이어 거리가 이 이내여야 탑승 가능.</summary>
-    private const float AlignmentTolerance = 0.5f;
 
     /// <summary>도착 레인이 River인데 통나무 위가 아니면 익사 처리.</summary>
     private void CheckRiverArrival()
