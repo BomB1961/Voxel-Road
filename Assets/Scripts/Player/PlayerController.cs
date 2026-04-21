@@ -66,7 +66,8 @@ public class PlayerController : MonoBehaviour
         if (!GameManager.IsAlive || _isMoving) return;
         if (transform.parent == null) return;
 
-        // 통나무가 레인 경계를 넘으면 플레이어는 경계에 남고 내려진 뒤 익사 연출
+        // 통나무가 맵 경계(halfSpan)까지 흘러가면 탈출·익사
+        // 카메라는 MapXLimit에서 이미 멈추므로 플레이어가 화면 끝자락에서 사라지는 연출
         var wg = WorldGenerator.Instance;
         int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
         float px = transform.position.x;
@@ -103,10 +104,11 @@ public class PlayerController : MonoBehaviour
         GridPosition target = basePos.Move(dx, dz);
         // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
         if (target.Z < 0) return;
-        // 좌우 경계: LaneSpanX 절반 밖으로 이동 금지.
+        // 좌우 경계: 카메라 가시 영역 끝(MapXLimit)까지만 이동 허용. 좌우 동일 기준.
         var wg = WorldGenerator.Instance;
         int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
-        if (target.X < -halfSpan || target.X >= halfSpan) return;
+        int xLimit = Mathf.RoundToInt(VoxelRoad.CameraSystem.CrossyRoadCameraExtension.MapXLimit);
+        if (target.X < -xLimit || target.X > xLimit) return;
         // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
         if (wg != null && wg.IsCellBlocked(target.X, target.Z)) return;
 
@@ -134,6 +136,8 @@ public class PlayerController : MonoBehaviour
 
         Vector3 from = transform.position;
         Vector3 to = target.ToWorldPosition(_tileSize);
+        // 착지 지점이 River면 통나무 예측 위치로 점프 목표 X를 보정해 정중앙 안착
+        AdjustJumpTargetForLog(ref to, target);
         float elapsed = 0f;
 
         while (elapsed < _moveDuration)
@@ -161,37 +165,63 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    /// <summary>착지 지점이 통나무 실제 몸체(콜라이더 - margin) 안에 있을 때만 탑승.
-    /// X/Z 모두 엄격 검증으로 인접 통나무 오탑승·물 위 탑승 방지.
-    /// 탑승 시 X는 통나무 중심으로 스냅 → 시각적으로 정확히 통나무 위.</summary>
-    private void TryBoardLog()
+    /// <summary>점프 시작 시 착지 셀 위의 통나무를 탐색해 점프 목표 X를 통나무 예측 위치로 보정.
+    /// 단, 보정 범위는 ±AlignmentTolerance 이내로 제한 — 옆 셀 통나무에 자석처럼 끌려가지 않게.</summary>
+    private void AdjustJumpTargetForLog(ref Vector3 to, GridPosition target)
     {
         var wg = WorldGenerator.Instance;
-        if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
+        if (wg == null || wg.GetLaneTypeAt(target.Z) != LaneType.River) return;
 
-        var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
+        float halfSpan = wg.LaneHalfSpan;
+        var hits = Physics.OverlapBox(to + Vector3.up * 0.3f,
             new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
-        const float margin = 0.3f; // 콜라이더와 비주얼 메시 차이 여유분
         for (int i = 0; i < hits.Length; i++)
         {
             var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
             if (log == null) continue;
 
-            // 플레이어 X/Z 모두 통나무 실제 몸체 안에 있어야 탑승
-            Bounds b = hits[i].bounds;
-            float px = transform.position.x;
-            float pz = transform.position.z;
-            if (px < b.min.x + margin || px > b.max.x - margin) continue;
-            if (pz < b.min.z + margin || pz > b.max.z - margin) continue;
+            float predictedLogX = log.transform.position.x + log.VelocityX * _moveDuration;
+            // 착지 시점에 통나무가 레인 경계 밖이면 보정 대상에서 제외 (끝자락 오탑승 방지)
+            if (Mathf.Abs(predictedLogX) > halfSpan) continue;
+            // 통나무 중심이 점프 목표와 충분히 가까울 때만 보정 — 일직선 정렬 강제
+            if (Mathf.Abs(predictedLogX - to.x) > AlignmentTolerance) continue;
 
-            transform.SetParent(log.transform, true);
-            // 시각 정확도를 위해 X를 통나무 중심으로 스냅
-            var p = transform.position;
-            transform.position = new Vector3(log.transform.position.x, p.y, p.z);
+            to.x = predictedLogX;
             return;
         }
     }
+
+    /// <summary>착지 후 통나무 탑승 처리. AlignmentTolerance 이내일 때만 탑승 → 일직선 정렬 강제.</summary>
+    private void TryBoardLog()
+    {
+        var wg = WorldGenerator.Instance;
+        if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
+
+        float halfSpan = wg.LaneHalfSpan;
+        var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
+            new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
+            ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
+            if (log == null) continue;
+
+            // 레인 경계 밖(패딩 영역)에 있는 통나무는 탑승 금지
+            if (Mathf.Abs(log.transform.position.x) > halfSpan) continue;
+
+            // 통나무 중심과 플레이어가 X·Z 모두 충분히 정렬돼야 탑승
+            float dx = Mathf.Abs(transform.position.x - log.transform.position.x);
+            float dz = Mathf.Abs(transform.position.z - log.transform.position.z);
+            if (dx > AlignmentTolerance || dz > AlignmentTolerance) continue;
+
+            transform.SetParent(log.transform, true);
+            return;
+        }
+    }
+
+    /// <summary>탑승 허용 정렬 오차(반칸). 통나무 중심과 플레이어 거리가 이 이내여야 탑승 가능.</summary>
+    private const float AlignmentTolerance = 0.5f;
 
     /// <summary>도착 레인이 River인데 통나무 위가 아니면 익사 처리.</summary>
     private void CheckRiverArrival()

@@ -225,6 +225,8 @@ MonoBehaviour:
   _forwardFollowSpeed: 1.5
   _lateralDamping: 1.5
   _forwardDeadzoneLanes: 4
+  _mapHalfSpan: 25
+  _visibleHalfWidth: 5.73
 --- !u!114 &589902927
 MonoBehaviour:
   m_ObjectHideFlags: 0

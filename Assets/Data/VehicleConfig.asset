@@ -22,6 +22,6 @@ MonoBehaviour:
   _vehicleSpeeds: [5, 5, 5, 5, 5, 5]
   _minSpeed: 5
   _maxSpeed: 5
-  _minSpawnInterval: 0.75
-  _maxSpawnInterval: 1.75
+  _minSpawnInterval: 1.5
+  _maxSpawnInterval: 3.5
   _firstSpawnDelayMax: 2

@@ -19,6 +19,9 @@ namespace VoxelRoad.River
         [Tooltip("스폰 시 통나무에 적용할 균일 스케일. 레인 폭 1m 기준 약 0.85 권장.")]
         [Range(0.2f, 1.5f)]
         [SerializeField] private float _spawnScale = 0.85f;
+        [Tooltip("통나무 가로(X축) 길이 배율. _spawnScale에 곱해짐. 2.0 = 두 배 길이.")]
+        [Range(1f, 5f)]
+        [SerializeField] private float _lengthScale = 2.0f;
 
         public GameObject[] LogPrefabs => _logPrefabs;
         public float[] LogSpeeds => _logSpeeds;
@@ -28,5 +31,6 @@ namespace VoxelRoad.River
         public float MaxSpawnInterval => _maxSpawnInterval;
         public float FirstSpawnDelayMax => _firstSpawnDelayMax;
         public float SpawnScale => _spawnScale;
+        public float LengthScale => _lengthScale;
     }
 }

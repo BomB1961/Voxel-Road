@@ -25,6 +25,15 @@ namespace VoxelRoad.CameraSystem
         [Tooltip("시작 지점 기준 이 거리(레인 수) 이내에서는 카메라 Z 고정. 이후부터만 추적 시작.")]
         [SerializeField] private float _forwardDeadzoneLanes = 4f;
 
+        [Header("Map Boundary Clamp")]
+        [Tooltip("맵 X 절반 크기(LaneSpanX / 2). WorldConfig의 LaneSpanX와 일치시킬 것.")]
+        [SerializeField] private float _mapHalfSpan = 25f;
+        [Tooltip("직교 카메라 가시 X 반폭 = OrthographicSize × Aspect. Inspector에서 직접 측정해 입력.")]
+        [SerializeField] private float _visibleHalfWidth = 5.73f;
+
+        /// <summary>카메라가 더 이상 따라가지 않는 X 한계. PlayerController 경계 동기화에 사용.</summary>
+        public static float MapXLimit { get; private set; } = 19f;
+
         private float _startPlayerZ;
         private bool _initialized;
 
@@ -54,12 +63,16 @@ namespace VoxelRoad.CameraSystem
             float dt = Mathf.Max(0f, deltaTime);
 
             float targetX = playerPos.x + _followOffset.x;
-            // 점프 아크(플레이어 Y)를 카메라에 반영하면 화면 기울어짐 발생 → 고정 Y 사용.
             float targetY = (_useFixedY ? _baseGroundY : playerPos.y) + _followOffset.y;
-            // 데드존: 플레이어가 시작점에서 deadzone 레인 이상 전진했을 때만 카메라 Z 추적.
-            // 추적 시에도 (plrZ - deadzone) + offset.z 로 트레일 유지 → 플레이어 ±데드존 간격 고정.
             float effectivePlayerZ = Mathf.Max(_startPlayerZ, playerPos.z - _forwardDeadzoneLanes);
             float targetZ = effectivePlayerZ + _followOffset.z;
+
+            // 카메라 X 클램프: 화면 끝이 맵 경계(±_mapHalfSpan)를 넘지 않도록.
+            // MapXLimit = _mapHalfSpan - _visibleHalfWidth
+            // 카메라 중심이 MapXLimit 에 있을 때 화면 끝 = mapHalfSpan (맵 경계 정확히 일치)
+            float limit = Mathf.Max(0f, _mapHalfSpan - _visibleHalfWidth);
+            MapXLimit = limit;
+            targetX = Mathf.Clamp(targetX, -limit, limit);
 
             float tX = dt > 0f ? Mathf.Clamp01(dt * _lateralDamping) : 1f;
             float tZ = dt > 0f ? Mathf.Clamp01(dt * _forwardFollowSpeed) : 1f;

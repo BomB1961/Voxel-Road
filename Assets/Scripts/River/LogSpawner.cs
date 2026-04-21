@@ -77,8 +77,8 @@ namespace VoxelRoad.River
             var logGO = Instantiate(prefab, transform);
             logGO.transform.localPosition = localPos;
             float s = _config.SpawnScale;
-            if (s > 0f && Mathf.Abs(s - 1f) > 0.001f)
-                logGO.transform.localScale = new Vector3(s, s, s);
+            float lx = s * _config.LengthScale;
+            logGO.transform.localScale = new Vector3(lx, s, s);
             var logComp = logGO.GetComponent<Log>();
             if (logComp != null) logComp.Launch(_currentSpeed, _direction, _laneSpanX);
         }
