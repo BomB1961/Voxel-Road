@@ -25,5 +25,5 @@ MonoBehaviour:
   _maxSpawnInterval: 5
   _firstSpawnDelayMax: 2
   _spawnScale: 0.85
-  _lengthScale: 4.5
+  _lengthScale: 4.5248868
   _widthScale: 3.5

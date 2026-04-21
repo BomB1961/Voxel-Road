@@ -81,7 +81,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        int worldX = Mathf.RoundToInt(transform.position.x - 0.5f);
+        int worldX = Mathf.RoundToInt(transform.position.x);
         if (worldX != _gridPos.X)
         {
             _gridPos = new GridPosition(worldX, _gridPos.Z);
@@ -99,8 +99,6 @@ public class PlayerController : MonoBehaviour
             case MoveDirection.Left:     dx = -1; break;
             case MoveDirection.Right:    dx =  1; break;
         }
-        // 통나무 탑승 중 좌우 이동 차단
-        if (dx != 0 && transform.parent != null) return;
         // 이동 중이면 진행 중인 도착 셀을 기준으로 다음 칸 계산 (연타 시 2칸 점프 방지).
         GridPosition basePos = _isMoving ? _moveTarget : _gridPos;
         GridPosition target = basePos.Move(dx, dz);
@@ -122,10 +120,10 @@ public class PlayerController : MonoBehaviour
             _queuedTarget = target;
             return;
         }
-        StartCoroutine(MoveRoutine(target));
+        StartCoroutine(MoveRoutine(target, dx));
     }
 
-    private IEnumerator MoveRoutine(GridPosition target)
+    private IEnumerator MoveRoutine(GridPosition target, int dx = 0)
     {
         _isMoving = true;
         _moveTarget = target;
@@ -143,10 +141,24 @@ public class PlayerController : MonoBehaviour
         Vector3 from = transform.position;
         Vector3 to = target.ToWorldPosition(_tileSize);
 
+        // 통나무에서 출발하는 경우 경로 계산을 분기:
+        //  - 좌우 점프(dx!=0): 출발 통나무 프레임 기준 상대 좌표로 보간 → 드리프트를 매 프레임 자동 추적
+        //  - 전후 점프(dx==0): 월드 X 고정 → 출발 통나무가 밀려도 도착 X 불변 (다른 레인으로 건너가는 의미)
+        bool trackLog = prevParent != null && dx != 0;
+        float fromRelX = 0f;
+        float toRelX = 0f;
         if (prevParent != null)
         {
-            // 로그에서 출발: to.x = from.x 유지 → 완전 Z축 직선 점프
-            to.x = from.x;
+            if (trackLog)
+            {
+                fromRelX = from.x - prevParent.position.x;
+                toRelX = fromRelX + dx * _tileSize;
+            }
+            else
+            {
+                // 전후 이동: X를 출발 시점 월드 좌표로 고정 (대각선·드리프트 방지)
+                to.x = from.x;
+            }
         }
         else
         {
@@ -155,18 +167,32 @@ public class PlayerController : MonoBehaviour
             transform.position = new Vector3(from.x, from.y, from.z);
             AdjustJumpTargetForLog(ref to, target);
         }
-        float elapsed = 0f;
 
+        float elapsed = 0f;
         while (elapsed < _moveDuration)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / _moveDuration);
             float arc = Mathf.Sin(t * Mathf.PI) * _jumpHeight;
-            transform.position = Vector3.Lerp(from, to, t) + new Vector3(0f, arc, 0f);
+            float z = Mathf.Lerp(from.z, to.z, t);
+            float x;
+            if (trackLog && prevParent != null)
+            {
+                float relX = Mathf.Lerp(fromRelX, toRelX, t);
+                x = prevParent.position.x + relX;
+            }
+            else
+            {
+                x = Mathf.Lerp(from.x, to.x, t);
+            }
+            transform.position = new Vector3(x, arc, z);
             yield return null;
         }
 
-        transform.position = to;
+        if (trackLog && prevParent != null)
+            transform.position = new Vector3(prevParent.position.x + toRelX, 0f, to.z);
+        else
+            transform.position = to;
         _gridPos = target;
         if (_gridPos.Z > MaxZ) MaxZ = _gridPos.Z;
         _isMoving = false;
@@ -183,7 +209,7 @@ public class PlayerController : MonoBehaviour
         {
             GridPosition next = _queuedTarget.Value;
             _queuedTarget = null;
-            StartCoroutine(MoveRoutine(next));
+            StartCoroutine(MoveRoutine(next, next.X - _gridPos.X));
         }
     }
 
