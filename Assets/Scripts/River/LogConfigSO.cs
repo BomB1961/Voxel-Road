@@ -21,7 +21,11 @@ namespace VoxelRoad.River
         [SerializeField] private float _spawnScale = 0.85f;
         [Tooltip("통나무 가로(X축) 길이 배율. _spawnScale에 곱해짐. 2.0 = 두 배 길이.")]
         [Range(1f, 5f)]
-        [SerializeField] private float _lengthScale = 2.0f;
+        [SerializeField] private float _lengthScale = 2.5f;
+
+        [Tooltip("통나무 세로(Z축) 너비 배율. _spawnScale에 곱해짐. 클수록 통나무가 두꺼워짐.")]
+        [Range(1f, 10f)]
+        [SerializeField] private float _widthScale = 6.0f;
 
         public GameObject[] LogPrefabs => _logPrefabs;
         public float[] LogSpeeds => _logSpeeds;
@@ -32,5 +36,6 @@ namespace VoxelRoad.River
         public float FirstSpawnDelayMax => _firstSpawnDelayMax;
         public float SpawnScale => _spawnScale;
         public float LengthScale => _lengthScale;
+        public float WidthScale => _widthScale;
     }
 }

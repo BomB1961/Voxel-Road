@@ -26,3 +26,4 @@ MonoBehaviour:
   _firstSpawnDelayMax: 2
   _spawnScale: 0.85
   _lengthScale: 2.5
+  _widthScale: 3.5

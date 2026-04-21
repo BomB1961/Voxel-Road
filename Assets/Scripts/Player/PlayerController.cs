@@ -218,7 +218,7 @@ public class PlayerController : MonoBehaviour
 
             float dx = Mathf.Abs(transform.position.x - log.transform.position.x);
             float dz = Mathf.Abs(transform.position.z - log.transform.position.z);
-            if (dx > log.HalfWidthX || dz > 0.6f) continue;
+            if (dx > log.HalfWidthX || dz > log.HalfLengthZ) continue;
 
             transform.SetParent(log.transform, true);
             log.SnapToSurface(transform);

@@ -13,43 +13,52 @@ namespace VoxelRoad.River
         private float _leftLimit;
         private float _rightLimit;
         private Transform _passenger;
-        private BoxCollider _col;
+
+        // Launch 시 1회 캐싱 — 매 프레임 GetComponent/foreach 비용 제거
+        private float _halfWidthX;
+        private float _halfLengthZ;
+        private float _surfaceY;
 
         /// <summary>X축 속도(부호 포함). 점프 착지 지점 예측에 사용.</summary>
         public float VelocityX => _speed * _direction;
 
-        /// <summary>BoxCollider 월드 X 절반 폭. 탑승 가능 X 범위 판정에 사용.</summary>
-        public float HalfWidthX
-        {
-            get
-            {
-                if (_col == null) _col = GetComponent<BoxCollider>();
-                return _col != null ? _col.bounds.extents.x : 1.5f;
-            }
-        }
+        /// <summary>BoxCollider 기준 X 절반 폭. 탑승 X 판정.</summary>
+        public float HalfWidthX => _halfWidthX;
 
-        /// <summary>비주얼 표면 월드 Y. 탑승 시 플레이어 Y 스냅에 사용.</summary>
-        public float SurfaceY
-        {
-            get
-            {
-                foreach (var r in GetComponentsInChildren<Renderer>(true))
-                {
-                    if (r.gameObject.name == "_BlobShadow") continue;
-                    return r.bounds.max.y;
-                }
-                return transform.position.y;
-            }
-        }
+        /// <summary>BoxCollider 기준 Z 절반 폭. 탑승 Z 판정.</summary>
+        public float HalfLengthZ => _halfLengthZ;
+
+        /// <summary>비주얼 표면 월드 Y. 탑승 시 플레이어 Y 스냅.</summary>
+        public float SurfaceY => _surfaceY;
 
         public void Launch(float speed, float direction, float laneSpanX)
         {
-            _col = GetComponent<BoxCollider>();
             _speed = speed;
             _direction = Mathf.Sign(direction);
             _halfLaneSpan = laneSpanX * 0.5f;
             _leftLimit  = -_halfLaneSpan - _boundsPadding;
             _rightLimit =  _halfLaneSpan + _boundsPadding;
+
+            var col = GetComponent<BoxCollider>();
+            if (col != null)
+            {
+                _halfWidthX  = col.bounds.extents.x;
+                _halfLengthZ = col.bounds.extents.z;
+            }
+            else
+            {
+                _halfWidthX  = 1.5f;
+                _halfLengthZ = 0.6f;
+            }
+
+            // BlobShadow 제외한 첫 번째 렌더러의 표면 Y 캐싱
+            _surfaceY = transform.position.y;
+            foreach (var r in GetComponentsInChildren<Renderer>(true))
+            {
+                if (r.gameObject.name == "_BlobShadow") continue;
+                _surfaceY = r.bounds.max.y;
+                break;
+            }
         }
 
         private void Update()
@@ -72,7 +81,7 @@ namespace VoxelRoad.River
 
             float dx = Mathf.Abs(other.transform.position.x - transform.position.x);
             float dz = Mathf.Abs(other.transform.position.z - transform.position.z);
-            if (dx > HalfWidthX || dz > 0.6f) return;
+            if (dx > _halfWidthX || dz > _halfLengthZ) return;
 
             _passenger = other.transform;
             _passenger.SetParent(transform, true);
@@ -82,11 +91,10 @@ namespace VoxelRoad.River
         /// <summary>탑승자를 통나무 비주얼 표면 위로 Y 스냅.</summary>
         public void SnapToSurface(Transform passenger)
         {
-            float sy = SurfaceY;
-            if (sy > 0.001f)
+            if (_surfaceY > 0.001f)
             {
                 var p = passenger.position;
-                passenger.position = new Vector3(p.x, sy, p.z);
+                passenger.position = new Vector3(p.x, _surfaceY, p.z);
             }
         }
 
