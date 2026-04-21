@@ -161,29 +161,34 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    /// <summary>착지 지점에 통나무가 있으면 부모로 붙어 함께 이동.
-    /// 플레이어 착지 Z가 통나무 Z 범위(폭 방향) 안에 있어야만 탑승 — 인접 통나무 오탑승 방지.
-    /// X 스냅 없음: 착지 위치 그대로 통나무에 올라타 자연스럽게 이동.</summary>
+    /// <summary>착지 지점이 통나무 실제 몸체(콜라이더 - margin) 안에 있을 때만 탑승.
+    /// X/Z 모두 엄격 검증으로 인접 통나무 오탑승·물 위 탑승 방지.
+    /// 탑승 시 X는 통나무 중심으로 스냅 → 시각적으로 정확히 통나무 위.</summary>
     private void TryBoardLog()
     {
         var wg = WorldGenerator.Instance;
         if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
 
-        // X halfExtent 크게(통나무 길이 포함), Z halfExtent 매우 작게(정확한 Z 착지 판정)
         var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
             new Vector3(0.4f, 0.3f, 0.1f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
+        const float margin = 0.3f; // 콜라이더와 비주얼 메시 차이 여유분
         for (int i = 0; i < hits.Length; i++)
         {
             var log = hits[i].GetComponentInParent<VoxelRoad.River.Log>();
             if (log == null) continue;
 
-            // 플레이어 Z가 통나무 콜라이더 Z 범위(폭 방향) 안에 있어야 탑승
+            // 플레이어 X/Z 모두 통나무 실제 몸체 안에 있어야 탑승
             Bounds b = hits[i].bounds;
-            if (transform.position.z < b.min.z || transform.position.z > b.max.z) continue;
+            float px = transform.position.x;
+            float pz = transform.position.z;
+            if (px < b.min.x + margin || px > b.max.x - margin) continue;
+            if (pz < b.min.z + margin || pz > b.max.z - margin) continue;
 
-            // X 스냅 없이 착지 위치 그대로 탑승 (통나무 이동 시 같이 따라감)
             transform.SetParent(log.transform, true);
+            // 시각 정확도를 위해 X를 통나무 중심으로 스냅
+            var p = transform.position;
+            transform.position = new Vector3(log.transform.position.x, p.y, p.z);
             return;
         }
     }
