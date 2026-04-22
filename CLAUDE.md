@@ -1,5 +1,5 @@
 # CLAUDE.md
-Voxel Road · Unity 6000.4.0f1 URP · Crossy Road 모작
+Voxel Road · Unity 6000.4.3f1 URP · Crossy Road 모작
 기획서: .claude/plans/https-play-google-com-store-apps-details-parallel-locket.md
 
 ## 역할
