@@ -80,6 +80,7 @@ namespace VoxelRoad.World
             for (int i = 0; i < _config.GrassQuota; i++) _deck.Add(LaneType.Grass);
             for (int i = 0; i < _config.RoadQuota; i++) _deck.Add(LaneType.Road);
             for (int i = 0; i < _config.RiverQuota; i++) _deck.Add(LaneType.River);
+            for (int i = 0; i < _config.RailQuota; i++) _deck.Add(LaneType.Rail);
             // Fisher-Yates 셔플
             for (int i = _deck.Count - 1; i > 0; i--)
             {
@@ -144,6 +145,21 @@ namespace VoxelRoad.World
             else if (type == LaneType.River)
             {
                 var prefab = _config.RiverLanePrefab;
+                if (prefab == null)
+                {
+                    var gp = _config.GrassLanePrefab;
+                    var inst = Instantiate(gp, transform);
+                    inst.SetConfig(_config);
+                    lane = inst;
+                }
+                else
+                {
+                    lane = Instantiate(prefab, transform);
+                }
+            }
+            else if (type == LaneType.Rail)
+            {
+                var prefab = _config.RailLanePrefab;
                 if (prefab == null)
                 {
                     var gp = _config.GrassLanePrefab;

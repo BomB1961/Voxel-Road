@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using VoxelRoad.Game;
+using VoxelRoad.Rail;
 using VoxelRoad.Vehicles;
 using VoxelRoad.World;
 
@@ -92,7 +93,12 @@ public class PlayerController : MonoBehaviour
         // 차량 충돌 사망: Player 쪽에서 감지해 Vehicle 이 GameManager 를 몰라도 되게 함
         if (!_gameManager.IsAlive) return;
         if (other.GetComponentInParent<Vehicle>() != null)
+        {
             _gameManager.KillPlayer(DeathReason.Vehicle);
+            return;
+        }
+        if (other.GetComponentInParent<Train>() != null)
+            _gameManager.KillPlayer(DeathReason.Train);
     }
 
     private void HandleMoveInput(MoveDirection dir)

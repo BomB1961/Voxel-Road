@@ -22,6 +22,7 @@ namespace VoxelRoad.World
         [SerializeField] private GrassLane _grassLanePrefab;
         [SerializeField] private RoadLane _roadLanePrefab;
         [SerializeField] private RiverLane _riverLanePrefab;
+        [SerializeField] private RailLane _railLanePrefab;
 
         [Header("Grass Decor")]
         [Tooltip("잔디 레인 데코 프리팹 목록 (Kenney nature-kit).")]
@@ -47,11 +48,14 @@ namespace VoxelRoad.World
         [SerializeField] private int _roadQuota = 2;
         [Tooltip("덱 1사이클에 강 청크가 몇 개 포함될지.")]
         [SerializeField] private int _riverQuota = 2;
+        [Tooltip("덱 1사이클에 철길 청크가 몇 개 포함될지.")]
+        [SerializeField] private int _railQuota = 1;
 
         [Header("Chunk Length (per lane type)")]
         [SerializeField] private Vector2Int _grassChunk = new Vector2Int(1, 2);
         [SerializeField] private Vector2Int _roadChunk = new Vector2Int(2, 4);
         [SerializeField] private Vector2Int _riverChunk = new Vector2Int(2, 3);
+        [SerializeField] private Vector2Int _railChunk = new Vector2Int(1, 1);
 
         public int LaneSpanX => _laneSpanX;
         public int LookaheadLanes => _lookaheadLanes;
@@ -60,6 +64,7 @@ namespace VoxelRoad.World
         public GrassLane GrassLanePrefab => _grassLanePrefab;
         public RoadLane RoadLanePrefab => _roadLanePrefab;
         public RiverLane RiverLanePrefab => _riverLanePrefab;
+        public RailLane RailLanePrefab => _railLanePrefab;
         public GameObject[] GrassDecorPrefabs => _grassDecorPrefabs;
         public float GrassDecorDensity => _grassDecorDensity;
         public float GrassDecorScale => _grassDecorScale;
@@ -69,17 +74,20 @@ namespace VoxelRoad.World
         public int GrassQuota => _grassQuota;
         public int RoadQuota => _roadQuota;
         public int RiverQuota => _riverQuota;
+        public int RailQuota => _railQuota;
 
         public int MinChunkLength(LaneType t) => t switch
         {
             LaneType.Road => _roadChunk.x,
             LaneType.River => _riverChunk.x,
+            LaneType.Rail => _railChunk.x,
             _ => _grassChunk.x,
         };
         public int MaxChunkLength(LaneType t) => t switch
         {
             LaneType.Road => _roadChunk.y,
             LaneType.River => _riverChunk.y,
+            LaneType.Rail => _railChunk.y,
             _ => _grassChunk.y,
         };
     }
