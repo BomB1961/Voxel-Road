@@ -77,7 +77,9 @@ namespace VoxelRoad.River
         private void OnTriggerEnter(Collider other)
         {
             if (!other.CompareTag("Player")) return;
-            if (PlayerController.Instance != null && PlayerController.Instance.IsMoving) return;
+            // 점프 호 도중에는 탑승 차단 — 트리거는 1회성이므로 GetComponent 허용
+            var player = other.GetComponent<PlayerController>();
+            if (player != null && player.IsMoving) return;
             if (Mathf.Abs(transform.position.x) > _halfLaneSpan) return;
 
             float dx = Mathf.Abs(other.transform.position.x - transform.position.x);

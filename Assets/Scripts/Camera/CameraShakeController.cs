@@ -9,25 +9,17 @@ namespace VoxelRoad.CameraSystem
     [RequireComponent(typeof(CinemachineCamera))]
     public sealed class CameraShakeController : MonoBehaviour
     {
-        public static CameraShakeController Instance { get; private set; }
-
         private CinemachineBasicMultiChannelPerlin _perlin;
         private float _baseAmplitude;
 
         private void Awake()
         {
-            Instance = this;
             AcquirePerlin();
         }
 
         private void Start()
         {
             if (_perlin == null) AcquirePerlin();
-        }
-
-        private void OnDestroy()
-        {
-            if (Instance == this) Instance = null;
         }
 
         private void AcquirePerlin()

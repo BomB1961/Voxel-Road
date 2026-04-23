@@ -5,8 +5,8 @@ using UnityEngine;
 /// </summary>
 public readonly struct GridPosition : System.IEquatable<GridPosition>
 {
-    public readonly int X;
-    public readonly int Z;
+    public int X { get; }
+    public int Z { get; }
 
     public GridPosition(int x, int z) { X = x; Z = z; }
 

@@ -17,7 +17,8 @@ namespace VoxelRoad.CameraSystem
         [SerializeField] private float _fieldOfView = 40f;
 
         [Header("Follow")]
-        [SerializeField] private string _playerTag = "Player";
+        [Tooltip("추적 대상 Player Transform. Inspector 에서 직접 드래그 연결.")]
+        [SerializeField] private Transform _playerTransform;
         [Tooltip("Player 기준 카메라 위치. Y는 높이, Z는 뒤 거리. CrossyRoadCameraExtension 이 사용.")]
         [SerializeField] private Vector3 _followOffset = new Vector3(0f, 20f, -6f);
 
@@ -42,11 +43,8 @@ namespace VoxelRoad.CameraSystem
             // vcam 자체 회전이 Main Camera 회전으로 반영됨 (Aim = Do Nothing)
             transform.rotation = Quaternion.Euler(_mainCameraEuler);
 
-            if (vcam.Follow == null && !string.IsNullOrEmpty(_playerTag))
-            {
-                var playerGo = GameObject.FindGameObjectWithTag(_playerTag);
-                if (playerGo != null) vcam.Follow = playerGo.transform;
-            }
+            if (vcam.Follow == null && _playerTransform != null)
+                vcam.Follow = _playerTransform;
 
             var lens = vcam.Lens;
             lens.FieldOfView = _fieldOfView;

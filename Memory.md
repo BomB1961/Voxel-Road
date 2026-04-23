@@ -5,7 +5,7 @@
 
 ## 프로젝트 개요
 - Crossy Road 모작 (모바일 3D 러너)
-- Unity 6000.4.0f1, URP, New Input System, Cinemachine 3.1.6
+- Unity 6000.4.3f1, URP, New Input System, Cinemachine 3.1.6
 - 타깃: Android (Portrait, 1080x1920), 추후 iOS 확장 가능
 - 비주얼: CC0 복셀 에셋 (Kenney Voxel Pack 권장)
 - 기획서: `C:\Users\admin\.claude\plans\https-play-google-com-store-apps-details-parallel-locket.md`
@@ -23,8 +23,6 @@
 - [x] Play 실행, 게임 코드 에러 0건 확인
 - [x] `Memory.md`, `Debugging.md`, `Assets/ThirdParty/README.md` 생성
 - [ ] **(사용자 작업)** Kenney Voxel Pack 다운로드 → `Assets/ThirdParty/KenneyVoxelPack/`
-- **주의**: `mcpforunity://editor/state` 리소스가 Map 인스턴스를 반환하는 라우팅 불안정 현상 있음.
-  `execute_code` 결과는 Voxel Road 정상. 매 세션 시작 시 `set_active_instance(6401)` 필수.
 
 ### Step 1 — 스와이프/탭 입력 + 그리드 이동 ✅ (완료, 2026-04-20)
 - [x] `Assets/Scripts/Common/GridPosition.cs` — readonly struct, ToWorldPosition(), Move()
@@ -62,11 +60,15 @@
 - [x] Play 모드 시각 확인: Crossy Road 감성 확보 (스크린샷 Assets/Screenshots/)
 
 ### Step 2 — 쿼터뷰 추적 카메라 ✅ (완료, 2026-04-20)
-- [x] `Assets/Scripts/Camera/CameraFollower.cs` — LateUpdate Lerp 추적, Z 일방향(maxZ 기록), X 고정 옵션
-- [x] Main Camera에 부착, Target=Player, Offset=(5, 9, -10), Rotation=(30, -25, 0), FollowSpeed=3.5
-- [x] Play 테스트: Player.z 0→3 시 Cam.z -10→-7 추적 ✓, 후진(z=1) 시 maxZ=3 유지 ✓
+- [x] `Assets/Scripts/Camera/` — Cinemachine 3.1.6 **PostPipelineStage Extension**으로 Body 스테이지 가로채어 카메라 위치 직접 제어
+- [x] 전진 시만 Z 추적: `effectivePlayerZ = Max(startZ, playerZ - deadzone)`, deadzone=4레인 (후퇴해도 effectivePlayerZ 불변)
+- [x] 좌우 댐핑: `Lerp(pos.x, targetX, dt × 1.5f)` — 약간 딜레이로 무게감
+- [x] X 클램프: `MapXLimit = mapHalfSpan - visibleHalfWidth` — 맵 끝 노출 방지
+- [x] Y 고정: 플레이어 점프 아크가 카메라에 전이되지 않음
+- [x] `MapXLimit` static 노출 → PlayerController 좌우 이동 경계 판정에 재사용 (카메라 가시범위 = 플레이어 이동 가능 범위 항상 일치)
 - [x] Game View 커스텀 프리셋 `Mobile Portrait 1080x1920` (Android idx=18) 적용, Camera.aspect=0.563
-- **설계 결정**: 기획서의 Cinemachine 대신 단순 MonoBehaviour. 이유: Crossy Road는 고정 오프셋+일방향 추적이라 vcam 파이프라인 불필요
+- [x] Play 테스트: 전진 추적 ✓, 후진 시 maxZ 유지 ✓, X 클램프 ✓
+- **설계 결정**: Cinemachine PostPipelineStage Extension 사용. 기존 파이프라인 교체 없이 Body 스테이지만 가로채어 전진 전용 추적·좌우 댐핑·X 클램프·Y 고정 구현
 
 ### Step 3 — Lane 시스템 + WorldGenerator ✅ (완료, 2026-04-20)
 - [x] `LaneType` enum (Grass/Road/River/Rail), `ILane` 인터페이스, `BaseLane` 추상
@@ -100,7 +102,7 @@
 - [x] `Assets/Scripts/River/Log.cs` — 강물 흐름 이동 + OnTriggerEnter 시 Player를 parent로 탑승, Exit/Destroy 시 언패런트
 - [x] `Assets/Scripts/River/LogSpawner.cs` — 레인 가장자리에서 통나무 주기 생성
 - [x] `Assets/Scripts/World/RiverLane.cs` — 파란 물 바닥 + Spawner 호스팅, BaseLane 상속
-- [x] `WorldGenerator` — `static Instance` 노출, `GetLaneTypeAt(z)` 공개 API, River 가중치 포함 3종 랜덤
+- [x] `WorldGenerator` — `GetLaneTypeAt(z)` 공개 API, River 가중치 포함 3종 랜덤 (SerializeField 주입, 싱글턴 미사용)
 - [x] `PlayerController` — 이동 시작 시 통나무 언패런트, 도착 후 River인데 parent 없으면 익사(`KillPlayer("drown")`), Update에서 탑승 중 worldX를 gridPos에 재동기화
 - [x] `LaneConfigSO` — RiverLanePrefab + RiverWeight(0.25) 추가, Grass 0.4 / Road 0.35 재조정
 - [x] `Assets/Materials/M_Water.mat` (파란색 URP Lit)
@@ -152,20 +154,33 @@
 ### Step 9 — 난이도 커브 + 재시작 플로우 (대기)
 ### Step 10 — 오디오 일괄 (대기)
 
----
+### CLAUDE.md 준수 리팩토링 ✅ (2026-04-23)
+- [x] 싱글턴 4종 제거 (`GameManager`, `PlayerController`, `WorldGenerator`, `CameraShakeController`) → `[SerializeField]` 주입
+- [x] `UnityEvent` → C# `event Action` (`PlayerJumpShakeTrigger.OnLanded`)
+- [x] 사망 사유 매직 문자열 제거 → `enum DeathReason { Vehicle, Drown, OutOfBounds, Eagle }` (`Assets/Scripts/Game/DeathReason.cs` 신규)
+- [x] `GameManager.OnPlayerDied` 시그니처: `Action<DeathReason>`
+- [x] `Vehicle` 충돌 판정 역전: `Vehicle.OnTriggerEnter` 제거 → `PlayerController.OnTriggerEnter`가 `GetComponentInParent<Vehicle>()`로 감지. 런타임 스폰 오브젝트에 싱글턴 없이 주입 어려운 문제 해결.
+- [x] `WorldGenerator.Update` GC 제거 — `_despawnBuffer` 필드 재사용(`Clear/Add`)
+- [x] `GridPosition.X/Z` public readonly 필드 → 프로퍼티
+- [x] `CrossyRoadCameraSetup` — 태그+`FindGameObjectWithTag` 제거 → `_playerTransform` SerializeField
+- [x] 모든 SerializeField 의존성에 Awake null 체크 + `LogError` + `enabled=false` 가드
+- [x] `Debug.Log` 정보성 로그 `#if UNITY_EDITOR` 가드
+- **Unity Editor 재연결 필요** (아래 "에디터 재연결 체크리스트" 참조)
 
-## MCP 연결 정보 (2026-04-20 기준)
-- MCP For Unity v9.6.6, Transport: Stdio
-- Client: **Claude Desktop** (NOT Claude Code CLI)
-- **포트 주의**: Voxel Road와 Map 프로젝트가 모두 실행 중이면 포트가 유동적(6400/6401이 서로 바뀜). 반드시 `mcpforunity://instances` 리소스로 현재 포트 확인 후 `set_active_instance("Voxel Road@<hash>")` 지정
-- Unity 에디터에서 `Session Active (Voxel Road)` 녹색 확인 필수
-- `execute_code`에서 `Application.dataPath`로 `C:/Users/admin/Unity/Voxel Road/Assets` 여부 반드시 검증
-- MCP 도구가 로드되지 않을 경우: Claude Desktop **트레이 아이콘 → Quit → 재실행** 후 **새 대화** 시작
+#### 에디터 재연결 체크리스트
+1. Hierarchy → Player 선택 → Inspector `PlayerController` 에서:
+   - `_inputReader` 슬롯에 InputReader 보유 오브젝트 드래그
+   - `_gameManager` 슬롯에 Hierarchy의 GameManager 드래그
+   - `_worldGenerator` 슬롯에 Hierarchy의 WorldGenerator 드래그
+2. Hierarchy → vcam 선택 → Inspector `CrossyRoadCameraSetup` 에서:
+   - `_playerTransform` 슬롯에 Player 드래그 (기존 `_playerTag` 필드는 삭제됨)
+3. Hierarchy → vcam(또는 Player) 의 `PlayerJumpShakeTrigger` 에서:
+   - `_shaker` 슬롯에 `CameraShakeController` 가 붙은 오브젝트 드래그
+4. Player 오브젝트에 BoxCollider(Is Trigger=ON) + Kinematic Rigidbody 확인 (Vehicle 충돌 감지용)
+5. Play → 차량 충돌 사망, 익사, 통나무 탑승, 카메라 흔들림 각각 검증
 
 ---
 
 ## 재개 방법
 1. 이 파일(`Memory.md`)을 읽어 마지막 완료 Step 확인
-2. `mcpforunity://instances` 리소스로 Voxel Road 포트 확인 후 `set_active_instance` 호출
-3. `execute_code`로 `Application.dataPath` 검증 (Voxel Road 확인)
-4. 먼저 **통나무 전진 점프 착지 X 불안정** 이슈 해결 후 **Step 6 (Rail + 기차)** 로 진행
+2. 먼저 **통나무 전진 점프 착지 X 불안정** 이슈 해결 후 **Step 6 (Rail + 기차)** 로 진행

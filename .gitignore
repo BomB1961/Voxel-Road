@@ -61,16 +61,15 @@ credentials.*
 # 디버그 로그 (런타임 생성)
 debug_filtered.log
 
+# Unity 자동 복구 씬 (크래시 후 생성)
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+
 # Editor 설정 일부
 /[Aa]ssets/StreamingAssets/aa.meta
 /[Aa]ssets/StreamingAssets/aa/*
 
-# MCP For Unity 관련 로컬 설정
+# Claude Code 로컬 설정
 /.claude/
-/.mcp.json
-
-# MCP For Unity 작업 산출물 (로그/스크린샷)
-/[Aa]ssets/UnityMCP/
-/[Aa]ssets/UnityMCP.meta
 /[Aa]ssets/Screenshots/
 /[Aa]ssets/Screenshots.meta

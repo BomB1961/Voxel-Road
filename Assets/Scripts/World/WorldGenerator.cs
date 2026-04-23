@@ -13,14 +13,10 @@ namespace VoxelRoad.World
         private readonly List<LaneType> _deck = new();
         private int _furthestSpawnedZ = -1;
         private LaneType _lastChunkType;
-
-        public static WorldGenerator Instance { get; private set; }
+        private readonly List<int> _despawnBuffer = new();
 
         /// <summary>레인 가로 폭의 절반(셀 기준). 플레이어 좌우 경계 판정에 사용.</summary>
         public int LaneHalfSpan => _config != null ? Mathf.RoundToInt(_config.LaneSpanX / 2f) : 25;
-
-        private void Awake() { Instance = this; }
-        private void OnDestroy() { if (Instance == this) Instance = null; }
 
         private void Start()
         {
@@ -48,11 +44,17 @@ namespace VoxelRoad.World
             int desiredFront = playerZ + _config.LookaheadLanes;
             while (_furthestSpawnedZ < desiredFront) SpawnNextChunk();
 
+            // 매 프레임 GC 할당 방지: 재사용 리스트에 후보 수집 후 일괄 제거
             int despawnBehind = playerZ - _config.LookbehindLanes;
-            var toRemove = new List<int>();
+            _despawnBuffer.Clear();
             foreach (var kv in _lanes)
-                if (kv.Key < despawnBehind) toRemove.Add(kv.Key);
-            foreach (var z in toRemove) { _lanes[z].Despawn(); _lanes.Remove(z); }
+                if (kv.Key < despawnBehind) _despawnBuffer.Add(kv.Key);
+            for (int i = 0; i < _despawnBuffer.Count; i++)
+            {
+                int z = _despawnBuffer[i];
+                _lanes[z].Despawn();
+                _lanes.Remove(z);
+            }
         }
 
         public LaneType GetLaneTypeAt(int zIndex)

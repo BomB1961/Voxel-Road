@@ -4,13 +4,16 @@ using UnityEngine.SceneManagement;
 
 namespace VoxelRoad.Game
 {
-    /// <summary>게임 상태 전역 관리. 사망 이벤트 + 씬 리로드.</summary>
+    /// <summary>게임 상태 관리(인스턴스). 사망 이벤트 + R키 씬 리로드.</summary>
+    [DefaultExecutionOrder(-100)]
     public sealed class GameManager : MonoBehaviour
     {
-        public static event Action OnPlayerDied;
-        public static bool IsAlive { get; private set; } = true;
-
         [SerializeField] private KeyCode _restartKey = KeyCode.R;
+
+        /// <summary>플레이어 사망 이벤트. 구독자는 SerializeField로 GameManager 참조 주입 후 +=.</summary>
+        public event Action<DeathReason> OnPlayerDied;
+
+        public bool IsAlive { get; private set; } = true;
 
         private void Awake()
         {
@@ -19,19 +22,21 @@ namespace VoxelRoad.Game
 
         private void Update()
         {
-            if (!IsAlive && UnityEngine.InputSystem.Keyboard.current != null
-                && UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame)
-            {
+            if (IsAlive) return;
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb == null) return;
+            if (kb.rKey.wasPressedThisFrame)
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-            }
         }
 
-        public static void KillPlayer(string reason)
+        public void KillPlayer(DeathReason reason)
         {
             if (!IsAlive) return;
             IsAlive = false;
+#if UNITY_EDITOR
             Debug.Log($"[GameManager] Player died: {reason}");
-            OnPlayerDied?.Invoke();
+#endif
+            OnPlayerDied?.Invoke(reason);
         }
     }
 }

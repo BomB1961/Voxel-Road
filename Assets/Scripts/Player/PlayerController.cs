@@ -1,14 +1,15 @@
 using System.Collections;
 using UnityEngine;
 using VoxelRoad.Game;
+using VoxelRoad.Vehicles;
 using VoxelRoad.World;
 
 /// <summary>플레이어 그리드 이동·점프 연출·입력 큐 처리, 사망(차량·익사) 시 입력 차단.</summary>
 public class PlayerController : MonoBehaviour
 {
-    public static PlayerController Instance { get; private set; }
-
     [SerializeField] private InputReader _inputReader;
+    [SerializeField] private GameManager _gameManager;
+    [SerializeField] private WorldGenerator _worldGenerator;
     [SerializeField] private float _tileSize = 1f;
     [SerializeField] private float _moveDuration = 0.12f;
     [SerializeField] private float _jumpHeight = 0.5f;
@@ -25,12 +26,9 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        Instance = this;
-    }
-
-    private void OnDestroy()
-    {
-        if (Instance == this) Instance = null;
+        if (_inputReader == null) { Debug.LogError("[PlayerController] _inputReader 미지정"); enabled = false; return; }
+        if (_gameManager == null) { Debug.LogError("[PlayerController] _gameManager 미지정"); enabled = false; return; }
+        if (_worldGenerator == null) { Debug.LogError("[PlayerController] _worldGenerator 미지정"); enabled = false; return; }
     }
 
     private void Start()
@@ -43,17 +41,19 @@ public class PlayerController : MonoBehaviour
     {
         if (_inputReader != null)
             _inputReader.OnMoveInput += HandleMoveInput;
-        GameManager.OnPlayerDied += HandleDied;
+        if (_gameManager != null)
+            _gameManager.OnPlayerDied += HandleDied;
     }
 
     private void OnDisable()
     {
         if (_inputReader != null)
             _inputReader.OnMoveInput -= HandleMoveInput;
-        GameManager.OnPlayerDied -= HandleDied;
+        if (_gameManager != null)
+            _gameManager.OnPlayerDied -= HandleDied;
     }
 
-    private void HandleDied()
+    private void HandleDied(DeathReason reason)
     {
         StopAllCoroutines();
         if (_inputReader != null) _inputReader.enabled = false;
@@ -63,13 +63,12 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         // 통나무 탑승 중에는 월드 X에 따라 그리드 X 재동기화, 후진/좌우 이탈 감지
-        if (!GameManager.IsAlive || _isMoving) return;
+        if (!_gameManager.IsAlive || _isMoving) return;
         if (transform.parent == null) return;
 
         // 통나무가 맵 경계(halfSpan)까지 흘러가면 탈출·익사
         // 카메라는 MapXLimit에서 이미 멈추므로 플레이어가 화면 끝자락에서 사라지는 연출
-        var wg = WorldGenerator.Instance;
-        int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
+        int halfSpan = _worldGenerator.LaneHalfSpan;
         float px = transform.position.x;
         if (px < -halfSpan || px > halfSpan)
         {
@@ -77,7 +76,7 @@ public class PlayerController : MonoBehaviour
             transform.SetParent(null, true);
             var p = transform.position;
             transform.position = new Vector3(clampedX, p.y, p.z);
-            GameManager.KillPlayer("drown");
+            _gameManager.KillPlayer(DeathReason.Drown);
             return;
         }
 
@@ -88,9 +87,17 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        // 차량 충돌 사망: Player 쪽에서 감지해 Vehicle 이 GameManager 를 몰라도 되게 함
+        if (!_gameManager.IsAlive) return;
+        if (other.GetComponentInParent<Vehicle>() != null)
+            _gameManager.KillPlayer(DeathReason.Vehicle);
+    }
+
     private void HandleMoveInput(MoveDirection dir)
     {
-        if (!GameManager.IsAlive) return;
+        if (!_gameManager.IsAlive) return;
         int dx = 0, dz = 0;
         switch (dir)
         {
@@ -105,12 +112,10 @@ public class PlayerController : MonoBehaviour
         // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
         if (target.Z < 0) return;
         // 좌우 경계: 카메라 가시 영역 끝(MapXLimit)까지만 이동 허용. 좌우 동일 기준.
-        var wg = WorldGenerator.Instance;
-        int halfSpan = wg != null ? wg.LaneHalfSpan : 25;
         int xLimit = Mathf.RoundToInt(VoxelRoad.CameraSystem.CrossyRoadCameraExtension.MapXLimit);
         if (target.X < -xLimit || target.X > xLimit) return;
         // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
-        if (wg != null && wg.IsCellBlocked(target.X, target.Z)) return;
+        if (_worldGenerator.IsCellBlocked(target.X, target.Z)) return;
 
         // 이동 방향으로 즉시 시선 회전 (Crossy Road 특유의 틱 회전)
         transform.rotation = Quaternion.LookRotation(new Vector3(dx, 0f, dz));
@@ -201,11 +206,10 @@ public class PlayerController : MonoBehaviour
         CheckRiverArrival();
 
         // 땅(비강) 착지 시 X를 그리드 정수로 재스냅 — 로그 드리프트 누적 방지
-        var wgSnap = WorldGenerator.Instance;
-        if (transform.parent == null && wgSnap != null && wgSnap.GetLaneTypeAt(_gridPos.Z) != LaneType.River)
+        if (transform.parent == null && _worldGenerator.GetLaneTypeAt(_gridPos.Z) != LaneType.River)
             transform.position = new Vector3(_gridPos.X * _tileSize, transform.position.y, transform.position.z);
 
-        if (GameManager.IsAlive && _queuedTarget.HasValue)
+        if (_gameManager.IsAlive && _queuedTarget.HasValue)
         {
             GridPosition next = _queuedTarget.Value;
             _queuedTarget = null;
@@ -217,10 +221,9 @@ public class PlayerController : MonoBehaviour
     /// 단, 보정 범위는 ±AlignmentTolerance 이내로 제한 — 옆 셀 통나무에 자석처럼 끌려가지 않게.</summary>
     private void AdjustJumpTargetForLog(ref Vector3 to, GridPosition target)
     {
-        var wg = WorldGenerator.Instance;
-        if (wg == null || wg.GetLaneTypeAt(target.Z) != LaneType.River) return;
+        if (_worldGenerator.GetLaneTypeAt(target.Z) != LaneType.River) return;
 
-        float halfSpan = wg.LaneHalfSpan;
+        float halfSpan = _worldGenerator.LaneHalfSpan;
         var hits = Physics.OverlapBox(to + Vector3.up * 0.3f,
             new Vector3(0.6f, 0.4f, 0.6f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
@@ -243,10 +246,9 @@ public class PlayerController : MonoBehaviour
     /// <summary>착지 후 통나무 탑승 처리. AlignmentTolerance 이내일 때만 탑승 → 일직선 정렬 강제.</summary>
     private void TryBoardLog()
     {
-        var wg = WorldGenerator.Instance;
-        if (wg == null || wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
+        if (_worldGenerator.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
 
-        float halfSpan = wg.LaneHalfSpan;
+        float halfSpan = _worldGenerator.LaneHalfSpan;
         var hits = Physics.OverlapBox(transform.position + Vector3.up * 0.3f,
             new Vector3(0.6f, 0.4f, 0.6f), Quaternion.identity,
             ~0, QueryTriggerInteraction.Collide);
@@ -271,11 +273,9 @@ public class PlayerController : MonoBehaviour
     /// <summary>도착 레인이 River인데 통나무 위가 아니면 익사 처리.</summary>
     private void CheckRiverArrival()
     {
-        var wg = WorldGenerator.Instance;
-        if (wg == null) return;
-        if (wg.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
+        if (_worldGenerator.GetLaneTypeAt(_gridPos.Z) != LaneType.River) return;
         // Trigger 판정이 끝난 뒤 parent 가 Log 이면 탑승 성공
         if (transform.parent != null) return;
-        GameManager.KillPlayer("drown");
+        _gameManager.KillPlayer(DeathReason.Drown);
     }
 }

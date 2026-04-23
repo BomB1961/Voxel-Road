@@ -1,9 +1,10 @@
 using UnityEngine;
-using VoxelRoad.Game;
 
 namespace VoxelRoad.Vehicles
 {
-    /// <summary>단일 차량. X축 일방향 주행, 레인 밖 이탈 시 소멸, 플레이어 충돌 시 사망 트리거.</summary>
+    /// <summary>단일 차량. X축 일방향 주행, 레인 밖 이탈 시 소멸.
+    /// 플레이어 충돌 판정은 PlayerController.OnTriggerEnter 쪽에서 수행 —
+    /// Vehicle 은 GameManager 참조 없이 순수 이동 로직만 담당.</summary>
     [RequireComponent(typeof(BoxCollider))]
     public sealed class Vehicle : MonoBehaviour
     {
@@ -32,14 +33,6 @@ namespace VoxelRoad.Vehicles
             if ((_direction > 0f && x > _rightLimit) || (_direction < 0f && x < _leftLimit))
             {
                 Destroy(gameObject);
-            }
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            if (other.CompareTag("Player"))
-            {
-                GameManager.KillPlayer("vehicle");
             }
         }
     }
