@@ -111,8 +111,9 @@ public class PlayerController : MonoBehaviour
         GridPosition target = basePos.Move(dx, dz);
         // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
         if (target.Z < 0) return;
-        // 좌우 경계: 카메라 가시 영역 끝(MapXLimit)까지만 이동 허용. 좌우 동일 기준.
-        int xLimit = Mathf.RoundToInt(VoxelRoad.CameraSystem.CrossyRoadCameraExtension.MapXLimit);
+        // 좌우 경계: 실제 맵 경계(LaneHalfSpan)까지 이동 허용. 카메라 클램프(MapXLimit)는
+        // 카메라 자체가 화면 끝을 맵 경계와 맞추기 위한 값이라 플레이어 한계와 다름.
+        int xLimit = _worldGenerator.LaneHalfSpan;
         if (target.X < -xLimit || target.X > xLimit) return;
         // 고정 장애물(나무/바위 등)이 있는 셀은 통행 불가
         if (_worldGenerator.IsCellBlocked(target.X, target.Z)) return;
@@ -206,6 +207,10 @@ public class PlayerController : MonoBehaviour
         TryBoardLog();
         CheckRiverArrival();
 
+#if UNITY_EDITOR
+        LogPosition("JumpEnd", dx);
+#endif
+
         // 땅(비강) 착지 시 X를 그리드 정수로 재스냅 — 로그 드리프트 누적 방지
         if (transform.parent == null && _worldGenerator.GetLaneTypeAt(_gridPos.Z) != LaneType.River)
             transform.position = new Vector3(_gridPos.X * _tileSize, transform.position.y, transform.position.z);
@@ -266,9 +271,32 @@ public class PlayerController : MonoBehaviour
 
             transform.SetParent(log.transform, true);
             log.SnapToSurface(transform);
+#if UNITY_EDITOR
+            LogPosition("Boarded", 0);
+#endif
             return;
         }
     }
+
+#if UNITY_EDITOR
+    private void LogPosition(string tag, int dx)
+    {
+        float px = transform.position.x;
+        float pz = transform.position.z;
+        string parentInfo;
+        if (transform.parent != null)
+        {
+            float lx = transform.parent.position.x;
+            float relX = px - lx;
+            parentInfo = $"log.x={lx:F3} relX={relX:F3}";
+        }
+        else
+        {
+            parentInfo = "parent=none";
+        }
+        Debug.Log($"[Pos/{tag}] dx={dx} grid=({_gridPos.X},{_gridPos.Z}) world=({px:F3},{pz:F3}) {parentInfo}");
+    }
+#endif
 
 
     /// <summary>도착 레인이 River인데 통나무 위가 아니면 익사 처리.</summary>

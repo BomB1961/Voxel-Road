@@ -183,6 +183,15 @@
 
 ## 버그 수정 일지
 
+### 2026-04-23 — 플레이어 좌우 이동이 맵 경계 전에 막힘
+**증상**: 맵 콘텐츠는 ±25 그리드까지 있는데 플레이어가 ±19 근처에서 더 이상 좌우로 못 감. 카메라는 멈춰 있고 이동키도 먹통.
+
+**원인**: `PlayerController.HandleMoveInput`의 이동 한계가 **카메라 클램프 값**(`MapXLimit = mapHalfSpan - visibleHalfWidth ≈ 19`)을 사용. 이 값은 "카메라 중심이 이 이상 가면 화면 끝이 맵 경계를 넘음"을 뜻하는 **카메라 전용 한계**이지 **플레이어 한계가 아님**. `Update()`의 익사 경계는 이미 `LaneHalfSpan = 25`를 사용해 판정 기준 불일치.
+
+**해결**: `HandleMoveInput`도 `_worldGenerator.LaneHalfSpan` 사용으로 통일. 플레이어는 맵 끝까지 이동 가능, 카메라는 자체 한계에서 멈추고 플레이어가 화면 끝으로 벗어날 수 있음(추후 독수리 타임아웃에서 처리).
+
+**부수 작업**: `PlayerController.LogPosition`(editor-only) 추가 — `[Pos/JumpEnd]` `[Pos/Boarded]` 로그에 grid/world/log.x/relX 기록. `Assets/Editor/FilteredDebugLog`가 가로채 `debug_filtered.log`에 저장 → 향후 좌표 기반 디버깅 토큰 절약.
+
 ### 2026-04-23 — 통나무 탑승 후 좌우 남는 간격이 매번 다름
 **증상**: Log 너비 3그리드, Player 이동 1그리드 단위 → 좌끝/우끝 탑승 시 양쪽 남는 간격이 대칭이어야 하는데, 탑승·이동할 때마다 간격이 제각각.
 
