@@ -91,14 +91,16 @@ namespace VoxelRoad.River
             SnapToSurface(_passenger);
         }
 
-        /// <summary>탑승자를 통나무 비주얼 표면 위로 Y 스냅.</summary>
+        /// <summary>탑승자를 통나무 비주얼 표면(Y)과 정수 슬롯(X: 통나무 중심±tileSize)으로 스냅.
+        /// X 스냅 근거: 점프 착지 시 _moveDuration 초과 프레임 동안 통나무가 vx×dt 만큼 더 흘러
+        /// 상대 오프셋에 드리프트가 영구 고정되는 문제 제거 (3슬롯 이산화).</summary>
         public void SnapToSurface(Transform passenger)
         {
-            if (_surfaceY > 0.001f)
-            {
-                var p = passenger.position;
-                passenger.position = new Vector3(p.x, _surfaceY, p.z);
-            }
+            var p = passenger.position;
+            float relX = p.x - transform.position.x;
+            float snappedRelX = Mathf.Round(relX);
+            float y = _surfaceY > 0.001f ? _surfaceY : p.y;
+            passenger.position = new Vector3(transform.position.x + snappedRelX, y, p.z);
         }
 
         private void OnTriggerExit(Collider other)

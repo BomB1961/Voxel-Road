@@ -243,7 +243,7 @@ MonoBehaviour:
   _orthographic: 1
   _orthographicSize: 5
   _fieldOfView: 40
-  _playerTag: Player
+  _playerTransform: {fileID: 0}
   _followOffset: {x: 0, y: 20, z: -6}
 --- !u!114 &589902928
 MonoBehaviour:
@@ -692,7 +692,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68936db10d948b549883dac598e840c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Game.GameManager
-  _restartKey: 114
 --- !u!4 &1471619483
 Transform:
   m_ObjectHideFlags: 0
@@ -716,6 +715,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2100345123833180055, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+      propertyPath: _jumpHeight
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2100345123833180055, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+      propertyPath: _gameManager
+      value: 
+      objectReference: {fileID: 1471619482}
+    - target: {fileID: 2100345123833180055, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+      propertyPath: _moveDuration
+      value: 0.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 2100345123833180055, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+      propertyPath: _worldGenerator
+      value: 
+      objectReference: {fileID: 675128687}
     - target: {fileID: 7239691996405858574, guid: c6187dcbf5013dc438026533509eb331, type: 3}
       propertyPath: m_Name
       value: Player

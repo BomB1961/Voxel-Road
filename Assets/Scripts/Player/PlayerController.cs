@@ -156,7 +156,8 @@ public class PlayerController : MonoBehaviour
         {
             if (trackLog)
             {
-                fromRelX = from.x - prevParent.position.x;
+                // 탑승 중 누적될 수 있는 서브그리드 드리프트 제거: 시작 오프셋을 정수 슬롯으로 스냅
+                fromRelX = Mathf.Round((from.x - prevParent.position.x) / _tileSize) * _tileSize;
                 toRelX = fromRelX + dx * _tileSize;
             }
             else

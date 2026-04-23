@@ -181,6 +181,26 @@
 
 ---
 
+## 버그 수정 일지
+
+### 2026-04-23 — 통나무 탑승 후 좌우 남는 간격이 매번 다름
+**증상**: Log 너비 3그리드, Player 이동 1그리드 단위 → 좌끝/우끝 탑승 시 양쪽 남는 간격이 대칭이어야 하는데, 탑승·이동할 때마다 간격이 제각각.
+
+**원인**: 점프 착지 타이밍 오차로 인한 상대 오프셋 드리프트.
+- `AdjustJumpTargetForLog`는 `to.x = logX + vx × _moveDuration` 로 통나무 예측 중심에 착지 계산
+- `MoveRoutine` while 루프는 `elapsed ≥ _moveDuration` 에서 종료 → 실제 경과시간이 항상 1프레임(≈16ms) 초과
+- 그 초과 구간 동안 통나무만 `vx × overshoot` 더 흘러감 → 플레이어 최종 X는 예측값 그대로인데 통나무 중심은 더 앞 → 상대 오프셋 `-vx × overshoot` 가 탑승 순간부터 고정
+- `SnapToSurface`는 Y만 맞추고 X는 그대로 → 드리프트 영구 유지
+- 이후 좌우 점프는 `fromRelX + dx`로 드리프트 값 유지한 채 슬롯 이동 → 매 탑승마다 `vx × dt` 만큼 다른 편차
+
+**해결**:
+1. `Log.SnapToSurface` — X도 `Mathf.Round(relX)` 로 정수 슬롯(통나무 중심 ±tileSize)에 스냅 → 탑승 즉시 드리프트 제거
+2. `PlayerController.MoveRoutine` 통나무 좌우 점프 — `fromRelX = Mathf.Round((from.x - parent.x) / tileSize) * tileSize` 로 점프 시작 시 재스냅 → 드리프트 재발 방지
+
+**커밋**: (이 커밋에서 수정)
+
+---
+
 ## 재개 방법
 1. 이 파일(`Memory.md`)을 읽어 마지막 완료 Step 확인
-2. 먼저 **통나무 전진 점프 착지 X 불안정** 이슈 해결 후 **Step 6 (Rail + 기차)** 로 진행
+2. **Step 6 (Rail + 기차)** 부터 진행 (통나무 착지 불안정 이슈 해결 완료)

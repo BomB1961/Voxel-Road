@@ -8,8 +8,6 @@ namespace VoxelRoad.Game
     [DefaultExecutionOrder(-100)]
     public sealed class GameManager : MonoBehaviour
     {
-        [SerializeField] private KeyCode _restartKey = KeyCode.R;
-
         /// <summary>플레이어 사망 이벤트. 구독자는 SerializeField로 GameManager 참조 주입 후 +=.</summary>
         public event Action<DeathReason> OnPlayerDied;
 
