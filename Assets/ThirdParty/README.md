@@ -22,8 +22,9 @@
 전문: https://creativecommons.org/publicdomain/zero/1.0/
 
 ## 라이선스 규칙 (프로젝트 공통)
-- **CC0 / Public Domain** 또는 **상업적 이용 허가된 무료 에셋**만 허용
-- GPL, CC-BY-SA 등 카피레프트 라이선스는 금지
+- **CC0 / Public Domain만 허용** — 크레딧 관리 부담·잠재 리스크 최소화
+- CC-BY 계열도 가능하면 제외 (BY 표기 누락 시 법적 리스크). 꼭 써야 한다면 별도 승인
+- CC-BY-SA / CC-BY-NC / CC-BY-ND / GPL 등은 **금지**
 - 에셋 사용 전 라이선스 확인 필수
 - 라이선스 파일(`LICENSE.txt`, `License.txt` 등)은 원본 그대로 보존
 
