@@ -26,6 +26,12 @@ namespace VoxelRoad.Rail
         [Tooltip("기차 길이 배율 (로컬 X). 최종 월드 길이 = 프리팹 X × spawnScale × lengthScale.")]
         [SerializeField] private float _lengthScale = 4f;
 
+        [Header("Cars (연결 차량)")]
+        [Tooltip("한 기차당 연결 차량 수. 1이면 단일 차량.")]
+        [SerializeField] private int _carsPerTrain = 3;
+        [Tooltip("차량 사이 간격 (월드 단위). 0이면 완전히 붙음.")]
+        [SerializeField] private float _carSpacing = 0.05f;
+
         public GameObject[] TrainPrefabs => _trainPrefabs;
         public float Speed => _speed;
         public float WarningSeconds => _warningSeconds;
@@ -33,5 +39,7 @@ namespace VoxelRoad.Rail
         public float MaxCycleInterval => _maxCycleInterval;
         public float SpawnScale => _spawnScale;
         public float LengthScale => _lengthScale;
+        public int CarsPerTrain => Mathf.Max(1, _carsPerTrain);
+        public float CarSpacing => Mathf.Max(0f, _carSpacing);
     }
 }

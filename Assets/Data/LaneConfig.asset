@@ -19,6 +19,7 @@ MonoBehaviour:
   _grassLanePrefab: {fileID: 7647306433298277920, guid: 742c6e02e9fc2e74f978de5cc85b9496, type: 3}
   _roadLanePrefab: {fileID: 572463087062380600, guid: ae8d5dd0caff97e4cacf1706058c769f, type: 3}
   _riverLanePrefab: {fileID: 4694676448557797182, guid: 89386c5d0a8269d42a65c90c3fc53794, type: 3}
+  _railLanePrefab: {fileID: 8138162778373156325, guid: 398bddb62f9c9c44bb7855a63891f5ef, type: 3}
   _grassDecorPrefabs:
   - {fileID: 919132149155446097, guid: bd1307960b4d20c4cbbe2c69d384acc7, type: 3}
   - {fileID: 919132149155446097, guid: e5fc7647b45d4554db408381fdc48a11, type: 3}
@@ -29,6 +30,11 @@ MonoBehaviour:
   _grassWeight: 0.35
   _roadWeight: 0.4
   _riverWeight: 0.25
+  _grassQuota: 2
+  _roadQuota: 2
+  _riverQuota: 2
+  _railQuota: 1
   _grassChunk: {x: 2, y: 3}
   _roadChunk: {x: 2, y: 4}
   _riverChunk: {x: 2, y: 3}
+  _railChunk: {x: 1, y: 1}
