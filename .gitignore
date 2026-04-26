@@ -58,9 +58,6 @@ sysinfo.txt
 .env.*
 credentials.*
 
-# 디버그 로그 (런타임 생성)
-debug_filtered.log
-
 # Unity 자동 복구 씬 (크래시 후 생성)
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta

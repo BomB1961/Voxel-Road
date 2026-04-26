@@ -190,7 +190,7 @@
 
 **해결**: `HandleMoveInput`도 `_worldGenerator.LaneHalfSpan` 사용으로 통일. 플레이어는 맵 끝까지 이동 가능, 카메라는 자체 한계에서 멈추고 플레이어가 화면 끝으로 벗어날 수 있음(추후 독수리 타임아웃에서 처리).
 
-**부수 작업**: `PlayerController.LogPosition`(editor-only) 추가 — `[Pos/JumpEnd]` `[Pos/Boarded]` 로그에 grid/world/log.x/relX 기록. `Assets/Editor/FilteredDebugLog`가 가로채 `debug_filtered.log`에 저장 → 향후 좌표 기반 디버깅 토큰 절약.
+**부수 작업**: `PlayerController.LogPosition`(editor-only) 추가 — `[Pos/JumpEnd]` `[Pos/Boarded]` 로그에 grid/world/log.x/relX 기록.
 
 ### 2026-04-23 — 통나무 탑승 후 좌우 남는 간격이 매번 다름
 **증상**: Log 너비 3그리드, Player 이동 1그리드 단위 → 좌끝/우끝 탑승 시 양쪽 남는 간격이 대칭이어야 하는데, 탑승·이동할 때마다 간격이 제각각.
