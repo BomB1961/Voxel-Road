@@ -35,6 +35,7 @@ namespace VoxelRoad.CameraSystem
         public static float MapXLimit { get; private set; } = 19f;
 
         private float _startPlayerZ;
+        private float _maxPlayerZ;
         private bool _initialized;
 
         public Transform Player { get => _player; set => _player = value; }
@@ -56,15 +57,18 @@ namespace VoxelRoad.CameraSystem
             if (!_initialized)
             {
                 _startPlayerZ = playerPos.z;
+                _maxPlayerZ = playerPos.z;
                 _initialized = true;
             }
+
+            _maxPlayerZ = Mathf.Max(_maxPlayerZ, playerPos.z);
 
             Vector3 pos = state.RawPosition;
             float dt = Mathf.Max(0f, deltaTime);
 
             float targetX = playerPos.x + _followOffset.x;
             float targetY = (_useFixedY ? _baseGroundY : playerPos.y) + _followOffset.y;
-            float effectivePlayerZ = Mathf.Max(_startPlayerZ, playerPos.z - _forwardDeadzoneLanes);
+            float effectivePlayerZ = Mathf.Max(_startPlayerZ, _maxPlayerZ - _forwardDeadzoneLanes);
             float targetZ = effectivePlayerZ + _followOffset.z;
 
             // 카메라 X 클램프: 화면 끝이 맵 경계(±_mapHalfSpan)를 넘지 않도록.

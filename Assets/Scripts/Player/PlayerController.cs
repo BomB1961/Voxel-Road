@@ -213,10 +213,6 @@ public class PlayerController : MonoBehaviour
         TryBoardLog();
         CheckRiverArrival();
 
-#if UNITY_EDITOR
-        LogPosition("JumpEnd", dx);
-#endif
-
         // 땅(비강) 착지 시 X를 그리드 정수로 재스냅 — 로그 드리프트 누적 방지
         if (transform.parent == null && _worldGenerator.GetLaneTypeAt(_gridPos.Z) != LaneType.River)
             transform.position = new Vector3(_gridPos.X * _tileSize, transform.position.y, transform.position.z);
@@ -277,32 +273,10 @@ public class PlayerController : MonoBehaviour
 
             transform.SetParent(log.transform, true);
             log.SnapToSurface(transform);
-#if UNITY_EDITOR
-            LogPosition("Boarded", 0);
-#endif
             return;
         }
     }
 
-#if UNITY_EDITOR
-    private void LogPosition(string tag, int dx)
-    {
-        float px = transform.position.x;
-        float pz = transform.position.z;
-        string parentInfo;
-        if (transform.parent != null)
-        {
-            float lx = transform.parent.position.x;
-            float relX = px - lx;
-            parentInfo = $"log.x={lx:F3} relX={relX:F3}";
-        }
-        else
-        {
-            parentInfo = "parent=none";
-        }
-        Debug.Log($"[Pos/{tag}] dx={dx} grid=({_gridPos.X},{_gridPos.Z}) world=({px:F3},{pz:F3}) {parentInfo}");
-    }
-#endif
 
 
     /// <summary>도착 레인이 River인데 통나무 위가 아니면 익사 처리.</summary>
