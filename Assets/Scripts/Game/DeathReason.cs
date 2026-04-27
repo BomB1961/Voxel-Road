@@ -6,7 +6,6 @@ namespace VoxelRoad.Game
         Vehicle,
         Drown,
         OutOfBounds,
-        Eagle,
         Train
     }
 }
