@@ -93,6 +93,13 @@ namespace VoxelRoad.CameraSystem
             float effectivePlayerZ = Mathf.Max(_startPlayerZ, Mathf.Max(_maxPlayerZ - _forwardDeadzoneLanes, _autoAdvanceAbsZ));
             float targetZ = effectivePlayerZ + _followOffset.z;
 
+            // 사망 후 카메라 즉시 동결: lerp residual을 제거해 벽이 플레이어 위로 슬라이드되는 어색함 방지.
+            if (_gameManager != null && !_gameManager.IsAlive)
+            {
+                targetX = pos.x;
+                targetZ = pos.z;
+            }
+
             // 카메라 X 클램프: 화면 끝이 맵 경계(±_mapHalfSpan)를 넘지 않도록.
             // MapXLimit = _mapHalfSpan - _visibleHalfWidth
             // 카메라 중심이 MapXLimit 에 있을 때 화면 끝 = mapHalfSpan (맵 경계 정확히 일치)
