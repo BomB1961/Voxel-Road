@@ -14,6 +14,10 @@ namespace VoxelRoad.Game
         [SerializeField] private float _yPosition = 0.5f;
         [Tooltip("사망 임계값 보정. 0이면 플레이어 중심이 화면 하단 도달 시 사망. 양수로 올리면 더 일찍 사망.\n시작 위치(player.z=0)에서 visibleBottomZ까지 거리(약 0.22)보다 큰 값을 주면 시작 즉시 사망하니 주의.")]
         [SerializeField] private float _killOffsetZ = 0f;
+        [Tooltip("게임 시작 후 이 시간(초) 동안 벽 렌더러 숨김. CrossyRoadCameraExtension의 _autoAdvanceStartDelay와 일치시킬 것.")]
+        [SerializeField] private float _hideUntilSeconds = 5f;
+
+        private MeshRenderer _renderer;
 
         private void Awake()
         {
@@ -21,12 +25,18 @@ namespace VoxelRoad.Game
             if (_gameManager == null) { Debug.LogError("[ChasingWall] _gameManager 미지정", this); enabled = false; return; }
             if (_playerController == null) { Debug.LogError("[ChasingWall] _playerController 미지정", this); enabled = false; return; }
             if (_camera == null) { Debug.LogError("[ChasingWall] Camera.main 없음", this); enabled = false; return; }
+            _renderer = GetComponent<MeshRenderer>();
+            if (_renderer != null) _renderer.enabled = false;
         }
 
         private void LateUpdate()
         {
             // 사망 후엔 벽 위치 동결 — 잔여 카메라 lerp이 있어도 벽은 그대로.
             if (!_gameManager.IsAlive) return;
+
+            // 그레이스 기간 종료 시점에 렌더러 켜기 — 자동 전진 시작과 동시에 벽 출현.
+            if (_renderer != null && !_renderer.enabled && Time.timeSinceLevelLoad >= _hideUntilSeconds)
+                _renderer.enabled = true;
 
             // 화면 하단 가장자리가 지면(Y=0)과 만나는 Z를 매 프레임 계산.
             // 카메라가 직각 투영(orthographic)이므로 frustum 하단 평면은 camPos − up*orthoSize 점을
