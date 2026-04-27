@@ -156,6 +156,17 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &168922186 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2100345123833180055, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+  m_PrefabInstance: {fileID: 3568163011021474520}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168922180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e30a591c4bb3fb49b3d8750602885b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
 --- !u!1 &589902922
 GameObject:
   m_ObjectHideFlags: 0
@@ -673,6 +684,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1471619483}
   - component: {fileID: 1471619482}
+  - component: {fileID: 1471619484}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -707,6 +719,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1471619484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471619481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58c8bb66b8b7cbf49a2e8b6fda54c3e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Game.EagleController
+  _gameManager: {fileID: 1471619482}
+  _playerController: {fileID: 168922186}
+  _config: {fileID: 11400000, guid: cb3a152b2f6591b4385f594651dd47b3, type: 2}
 --- !u!1001 &3568163011021474520
 PrefabInstance:
   m_ObjectHideFlags: 0
