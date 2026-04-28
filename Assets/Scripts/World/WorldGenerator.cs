@@ -91,7 +91,26 @@ namespace VoxelRoad.World
 
         private LaneType ChooseNextChunkType()
         {
-            // 직전 타입과 같으면 덱 앞에서 건너뛰어 교착 방지
+            // 위험 lane(Road/River/Rail) 직후엔 항상 Grass — 휴식 보장.
+            // 강 끝나자마자 자동차 같은 연속 위험 구간 차단.
+            bool lastWasDangerous = _lastChunkType == LaneType.Road
+                                 || _lastChunkType == LaneType.River
+                                 || _lastChunkType == LaneType.Rail;
+            if (lastWasDangerous)
+            {
+                // 덱 안에 Grass 카드가 있으면 그것을 빼서 사용. 없으면 그냥 Grass 강제(덱 시퀀스 무시).
+                for (int i = 0; i < _deck.Count; i++)
+                {
+                    if (_deck[i] == LaneType.Grass)
+                    {
+                        _deck.RemoveAt(i);
+                        return LaneType.Grass;
+                    }
+                }
+                return LaneType.Grass;
+            }
+
+            // Grass 다음엔 덱에서 자연 추첨. 단 같은 타입(Grass→Grass)은 회피.
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 if (_deck.Count == 0) RefillDeck();

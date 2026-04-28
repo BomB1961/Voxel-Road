@@ -15,14 +15,14 @@ MonoBehaviour:
   _logPrefabs:
   - {fileID: 3724370541441369062, guid: 044f8f59868c1a345ba1fef684b66d61, type: 3}
   _logSpeeds:
+  - 2
+  - 2.5
   - 3
   - 3.5
-  - 4
-  - 4.5
-  _minSpeed: 3
-  _maxSpeed: 4.5
-  _minSpawnInterval: 3
-  _maxSpawnInterval: 5
+  _minSpeed: 2
+  _maxSpeed: 3.5
+  _minSpawnInterval: 1.5
+  _maxSpawnInterval: 2.5
   _firstSpawnDelayMax: 2
   _spawnScale: 0.85
   _lengthScale: 4.5248866

@@ -30,11 +30,11 @@ MonoBehaviour:
   _grassWeight: 0.35
   _roadWeight: 0.4
   _riverWeight: 0.25
-  _grassQuota: 2
+  _grassQuota: 3
   _roadQuota: 2
   _riverQuota: 2
   _railQuota: 1
   _grassChunk: {x: 2, y: 3}
   _roadChunk: {x: 2, y: 4}
-  _riverChunk: {x: 2, y: 3}
+  _riverChunk: {x: 3, y: 5}
   _railChunk: {x: 1, y: 1}

@@ -22,16 +22,16 @@ namespace VoxelRoad.CameraSystem
 
         [Header("Follow Tuning")]
         [SerializeField] private float _forwardFollowSpeed = 1.5f;
-        [SerializeField] private float _lateralDamping = 1.5f;
+        [SerializeField] private float _lateralDamping = 8.0f;
 
-        [Tooltip("시작 지점 기준 이 거리(레인 수) 이내에서는 카메라 Z 고정. 이후부터만 추적 시작.")]
-        [SerializeField] private float _forwardDeadzoneLanes = 4f;
+        [Tooltip("시작 지점 기준 이 거리(레인 수) 이내에서는 카메라 Z 고정. 이후부터만 추적 시작. 후퇴 허용 범위와 일치시킬 것.")]
+        [SerializeField] private float _forwardDeadzoneLanes = 5f;
 
         [Header("Auto Advance (Crossy Road 식 압박)")]
         [Tooltip("게임 시작 후 이 시간(초) 이후부터 카메라가 시간 기반으로 자동 전진. 그 전엔 max-Z 기반 추적만.")]
         [SerializeField] private float _autoAdvanceStartDelay = 5f;
-        [Tooltip("자동 전진 속도(초당 월드 유닛). 한 레인 폭=1이라 1.5면 약 0.67초당 1레인.")]
-        [SerializeField] private float _autoAdvanceSpeed = 1.5f;
+        [Tooltip("자동 전진 속도(초당 월드 유닛). 0이면 시간 압박 OFF — Idle Death + 후퇴 불가 디자인에서는 0 권장.")]
+        [SerializeField] private float _autoAdvanceSpeed = 0f;
 
         [Header("Map Boundary Clamp")]
         [Tooltip("맵 X 절반 크기(LaneSpanX / 2). WorldConfig의 LaneSpanX와 일치시킬 것.")]

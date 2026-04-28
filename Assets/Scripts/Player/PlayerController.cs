@@ -15,10 +15,16 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _moveDuration = 0.12f;
     [SerializeField] private float _jumpHeight = 0.5f;
 
+    [Tooltip("입력이 이 시간(초) 동안 없으면 Idle 사망. 좌우·전진·후퇴 어떤 입력이든 reset.")]
+    [SerializeField] private float _idleTimeoutSeconds = 5f;
+    [Tooltip("MaxZ로부터 이 그리드 수까지만 후퇴 가능. 카메라 deadzone과 일치시킬 것.")]
+    [SerializeField] private int _backwardLimitGrids = 5;
+
     private GridPosition _gridPos;
     private GridPosition _moveTarget;   // 현재 진행 중인 이동의 도착 셀 (큐 입력 기준점)
     private GridPosition? _queuedTarget;
     private bool _isMoving;
+    private float _idleTimer;
 
     public GridPosition GridPos => _gridPos;
     public int MaxZ { get; private set; }
@@ -63,8 +69,20 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (!_gameManager.IsAlive) return;
+
+        // Idle Timer: 마지막 입력 시점부터 누적. 입력 시 HandleMoveInput에서 0으로 reset.
+        // 좌우 무빙으로 통나무·자동차 빈틈 대기 같은 정당한 회피 행동 인정.
+        // 5초 동안 어떤 입력도 없으면 사망 → 무한 대기 방지.
+        _idleTimer += Time.deltaTime;
+        if (_idleTimer >= _idleTimeoutSeconds)
+        {
+            _gameManager.KillPlayer(DeathReason.Idle);
+            return;
+        }
+
         // 통나무 탑승 중에는 월드 X에 따라 그리드 X 재동기화, 후진/좌우 이탈 감지
-        if (!_gameManager.IsAlive || _isMoving) return;
+        if (_isMoving) return;
         if (transform.parent == null) return;
 
         // 통나무가 맵 경계(halfSpan)까지 흘러가면 탈출·익사
@@ -104,6 +122,8 @@ public class PlayerController : MonoBehaviour
     private void HandleMoveInput(MoveDirection dir)
     {
         if (!_gameManager.IsAlive) return;
+        // 입력 시 idle timer reset — 좌우 무빙도 정당한 행동(통나무 대기)으로 인정.
+        _idleTimer = 0f;
         int dx = 0, dz = 0;
         switch (dir)
         {
@@ -117,6 +137,9 @@ public class PlayerController : MonoBehaviour
         GridPosition target = basePos.Move(dx, dz);
         // 맵 뒤쪽 경계: 시작 지점(z=0) 보다 뒤로는 이동 불가 — 맵 끝에서 시작하는 설계.
         if (target.Z < 0) return;
+        // 후퇴 제한: MaxZ - _backwardLimitGrids 이내까지만 허용. 무한 후퇴 방지.
+        // 카메라 deadzone과 일치 → 후퇴 허용 범위 = 카메라 시야 범위.
+        if (target.Z < MaxZ - _backwardLimitGrids) return;
         // 좌우 경계: 실제 맵 경계(LaneHalfSpan)까지 이동 허용. 카메라 클램프(MapXLimit)는
         // 카메라 자체가 화면 끝을 맵 경계와 맞추기 위한 값이라 플레이어 한계와 다름.
         int xLimit = _worldGenerator.LaneHalfSpan;

@@ -113,6 +113,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   _inputReader: {fileID: 6683192686691344253}
+  _gameManager: {fileID: 0}
+  _worldGenerator: {fileID: 0}
   _tileSize: 1
   _moveDuration: 0.12
   _jumpHeight: 0.5
