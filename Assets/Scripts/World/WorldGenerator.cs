@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using VoxelRoad.Game;
 
 namespace VoxelRoad.World
 {
@@ -9,6 +10,7 @@ namespace VoxelRoad.World
         [SerializeField] private LaneConfigSO _config;
         [SerializeField] private Transform _player;
 
+        private PlayerController _playerController;
         private readonly Dictionary<int, BaseLane> _lanes = new();
         private readonly List<LaneType> _deck = new();
         private int _furthestSpawnedZ = -1;
@@ -26,6 +28,9 @@ namespace VoxelRoad.World
                 enabled = false;
                 return;
             }
+
+            // PlayerController 캐싱: BalanceCurve가 MaxZ 참조 (거리 기반 base multiplier)
+            _playerController = _player.GetComponent<PlayerController>();
 
             int start = -_config.LookbehindLanes;
             int safeEnd = _config.SafeStartLanes;
@@ -68,8 +73,15 @@ namespace VoxelRoad.World
         {
             LaneType type = ChooseNextChunkType();
             int length = Random.Range(_config.MinChunkLength(type), _config.MaxChunkLength(type) + 1);
+            // 청크 단위 난이도 추첨 + 거리 base 곱 → 청크 내 모든 레인이 같은 multiplier 공유.
+            // 같은 청크 안에서는 일관성 유지(예: 도로 청크 4 lane 전체가 Hard 속도).
+            int currentMaxZ = _playerController != null ? _playerController.MaxZ : 0;
+            ChunkDifficulty diff = BalanceCurve.PickRandomDifficulty();
+            float multiplier = (type == LaneType.Grass)
+                ? 1f
+                : BalanceCurve.Combined(currentMaxZ, diff);
             for (int i = 0; i < length; i++)
-                SpawnLane(_furthestSpawnedZ + 1, type, i == 0, i == length - 1);
+                SpawnLane(_furthestSpawnedZ + 1, type, i == 0, i == length - 1, multiplier);
             _lastChunkType = type;
         }
 
@@ -91,26 +103,8 @@ namespace VoxelRoad.World
 
         private LaneType ChooseNextChunkType()
         {
-            // 위험 lane(Road/River/Rail) 직후엔 항상 Grass — 휴식 보장.
-            // 강 끝나자마자 자동차 같은 연속 위험 구간 차단.
-            bool lastWasDangerous = _lastChunkType == LaneType.Road
-                                 || _lastChunkType == LaneType.River
-                                 || _lastChunkType == LaneType.Rail;
-            if (lastWasDangerous)
-            {
-                // 덱 안에 Grass 카드가 있으면 그것을 빼서 사용. 없으면 그냥 Grass 강제(덱 시퀀스 무시).
-                for (int i = 0; i < _deck.Count; i++)
-                {
-                    if (_deck[i] == LaneType.Grass)
-                    {
-                        _deck.RemoveAt(i);
-                        return LaneType.Grass;
-                    }
-                }
-                return LaneType.Grass;
-            }
-
-            // Grass 다음엔 덱에서 자연 추첨. 단 같은 타입(Grass→Grass)은 회피.
+            // 직전 타입과 같으면 덱 앞에서 건너뛰어 교착 방지.
+            // 위험→Grass 강제는 단조로움 우려로 제거(2026-04-28 디렉터 결정) — 청크 단위 무작위 다양성 보존.
             for (int attempt = 0; attempt < 2; attempt++)
             {
                 if (_deck.Count == 0) RefillDeck();
@@ -131,7 +125,7 @@ namespace VoxelRoad.World
             return fallback;
         }
 
-        private void SpawnLane(int zIndex, LaneType type, bool isChunkStart = false, bool isChunkEnd = false)
+        private void SpawnLane(int zIndex, LaneType type, bool isChunkStart = false, bool isChunkEnd = false, float difficultyMultiplier = 1f)
         {
             // 동일 zIndex 에 이미 레인이 있으면 제거 후 재생성 (중복 겹침 방지)
             if (_lanes.TryGetValue(zIndex, out BaseLane existingLane))
@@ -192,7 +186,7 @@ namespace VoxelRoad.World
                 }
             }
 
-            lane.Initialize(zIndex, _config.LaneSpanX);
+            lane.Initialize(zIndex, _config.LaneSpanX, difficultyMultiplier);
             _lanes[zIndex] = lane;
             _furthestSpawnedZ = Mathf.Max(_furthestSpawnedZ, zIndex);
         }

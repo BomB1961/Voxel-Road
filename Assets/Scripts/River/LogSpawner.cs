@@ -11,14 +11,16 @@ namespace VoxelRoad.River
         private float _laneSpanX;
         private float _nextSpawnTime;
         private float _currentSpeed;
+        private float _multiplier = 1f;
         private bool _hasPrefabs;
         private bool _initialized;
 
-        public void Initialize(LogConfigSO config, float direction, float laneSpanX)
+        public void Initialize(LogConfigSO config, float direction, float laneSpanX, float difficultyMultiplier = 1f)
         {
             _config = config;
             _direction = Mathf.Sign(direction);
             _laneSpanX = laneSpanX;
+            _multiplier = Mathf.Clamp(difficultyMultiplier, 0.5f, 2f);
 
             _hasPrefabs = config.LogPrefabs != null && config.LogPrefabs.Length > 0;
             var speeds = config.LogSpeeds;
@@ -31,6 +33,9 @@ namespace VoxelRoad.River
             {
                 _currentSpeed = Random.Range(config.MinSpeed, config.MaxSpeed);
             }
+            // 청크 난이도 적용: 속도×multiplier, 스폰 간격÷multiplier.
+            // 통나무는 너무 느리면 정체, 너무 빠르면 탑승 불가 → multiplier가 합리적 범위(0.7~1.6)일 때 OK.
+            _currentSpeed *= _multiplier;
 
             _nextSpawnTime = Time.time + Random.Range(0f, config.FirstSpawnDelayMax);
             _initialized = true;
@@ -67,7 +72,7 @@ namespace VoxelRoad.River
             float startX = _direction > 0f ? -_laneSpanX * 0.5f - 1.5f : _laneSpanX * 0.5f + 1.5f;
             SpawnAt(new Vector3(startX, 0f, 0f));
 
-            _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval);
+            _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval) / _multiplier;
         }
 
         private void SpawnAt(Vector3 localPos)

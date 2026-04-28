@@ -11,13 +11,15 @@ namespace VoxelRoad.Vehicles
         private float _laneSpanX;
         private float _nextSpawnTime;
         private float _currentSpeed;
+        private float _multiplier = 1f;
         private bool _hasPrefabs;
 
-        public void Initialize(VehicleConfigSO config, float direction, float laneSpanX)
+        public void Initialize(VehicleConfigSO config, float direction, float laneSpanX, float difficultyMultiplier = 1f)
         {
             _config = config;
             _direction = Mathf.Sign(direction);
             _laneSpanX = laneSpanX;
+            _multiplier = Mathf.Clamp(difficultyMultiplier, 0.5f, 2f);
 
             _hasPrefabs = _config.VehiclePrefabs != null && _config.VehiclePrefabs.Length > 0;
 
@@ -32,6 +34,8 @@ namespace VoxelRoad.Vehicles
             {
                 _currentSpeed = Random.Range(_config.MinSpeed, _config.MaxSpeed);
             }
+            // 청크 난이도 적용: 속도는 곱셈, 스폰 간격은 나눗셈(빈도↑).
+            _currentSpeed *= _multiplier;
 
             _nextSpawnTime = Time.time + Random.Range(0f, _config.FirstSpawnDelayMax);
             Prewarm();
@@ -69,7 +73,7 @@ namespace VoxelRoad.Vehicles
             Vector3 spawnPos = transform.position + new Vector3(startX - transform.position.x, 0f, 0f);
             SpawnAt(spawnPos);
 
-            _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval);
+            _nextSpawnTime = Time.time + Random.Range(_config.MinSpawnInterval, _config.MaxSpawnInterval) / _multiplier;
         }
 
         private void SpawnAt(Vector3 worldPos)

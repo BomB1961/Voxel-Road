@@ -23,7 +23,7 @@ namespace VoxelRoad.World
             if (_spawner != null && _trainConfig != null)
             {
                 float dir = (_zIndex % 2 == 0) ? 1f : -1f;
-                _spawner.Initialize(_trainConfig, dir, _laneSpanX);
+                _spawner.Initialize(_trainConfig, dir, _laneSpanX, _difficultyMultiplier);
             }
         }
     }

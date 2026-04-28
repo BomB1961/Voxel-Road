@@ -8,7 +8,8 @@ namespace VoxelRoad.World
         LaneType Type { get; }
         int ZIndex { get; }
         Transform Transform { get; }
-        void Initialize(int zIndex, float laneSpanX);
+        /// <summary>레인 초기화. difficultyMultiplier=1이면 기본 난이도, 1보다 크면 더 어려움(속도↑·빈도↑).</summary>
+        void Initialize(int zIndex, float laneSpanX, float difficultyMultiplier = 1f);
         void Despawn();
     }
 }

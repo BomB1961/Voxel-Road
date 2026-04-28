@@ -17,16 +17,18 @@ namespace VoxelRoad.Rail
         private float _laneSpanX;
         private float _nextWarningTime;
         private float _warningStartTime;
+        private float _multiplier = 1f;
         private bool _isWarning;
         private bool _hasPrefabs;
         private bool _initialized;
         private Material _warningMat;
 
-        public void Initialize(TrainConfigSO config, float direction, float laneSpanX)
+        public void Initialize(TrainConfigSO config, float direction, float laneSpanX, float difficultyMultiplier = 1f)
         {
             _config = config;
             _direction = Mathf.Sign(direction);
             _laneSpanX = laneSpanX;
+            _multiplier = Mathf.Clamp(difficultyMultiplier, 0.5f, 2f);
             _hasPrefabs = config != null && config.TrainPrefabs != null && config.TrainPrefabs.Length > 0;
             if (_warningLight != null)
             {
@@ -62,7 +64,9 @@ namespace VoxelRoad.Rail
                 SpawnTrain();
                 SetWarningColor(_idleColor);
                 _isWarning = false;
-                _nextWarningTime = Time.time + Random.Range(_config.MinCycleInterval, _config.MaxCycleInterval);
+                // 청크 난이도 multiplier로 cycle 단축(빈도↑). 합리적 하한(2.5초)으로 회피 시간 보장.
+                float cycle = Random.Range(_config.MinCycleInterval, _config.MaxCycleInterval) / _multiplier;
+                _nextWarningTime = Time.time + Mathf.Max(2.5f, cycle);
             }
         }
 
@@ -85,7 +89,9 @@ namespace VoxelRoad.Rail
                 go.transform.localPosition = new Vector3(headX + offsetX, 0f, 0f);
                 go.transform.localScale = new Vector3(lx, s, s);
                 var train = go.GetComponent<Train>();
-                if (train != null) train.Launch(_config.Speed, _direction, _laneSpanX);
+                // 기차 속도도 청크 난이도 적용. 너무 빠르면 회피 불가 → 상한 25 m/s 가드.
+                float trainSpeed = Mathf.Min(25f, _config.Speed * _multiplier);
+                if (train != null) train.Launch(trainSpeed, _direction, _laneSpanX);
             }
         }
 

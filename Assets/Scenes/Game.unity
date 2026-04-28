@@ -526,7 +526,7 @@ MonoBehaviour:
   _baseGroundY: 0
   _forwardFollowSpeed: 1.5
   _lateralDamping: 8
-  _forwardDeadzoneLanes: 4
+  _forwardDeadzoneLanes: 5
   _autoAdvanceStartDelay: 5
   _autoAdvanceSpeed: 0
   _mapHalfSpan: 25

@@ -31,7 +31,7 @@ namespace VoxelRoad.World
             if (_spawner != null && _vehicleConfig != null)
             {
                 float dir = (_zIndex % 2 == 0) ? 1f : -1f;
-                _spawner.Initialize(_vehicleConfig, dir, _laneSpanX);
+                _spawner.Initialize(_vehicleConfig, dir, _laneSpanX, _difficultyMultiplier);
             }
             // 레인 타입별 Y 오프셋 (Grass=-0.02, Road=0, River=-0.01)로 Z-fighting 방지.
             if (_asphalt != null)
