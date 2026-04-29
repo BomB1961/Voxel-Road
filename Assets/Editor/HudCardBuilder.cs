@@ -13,6 +13,7 @@ namespace VoxelRoad.EditorTools
         private const string CardName = "ScoreCard";
         private const string BannerName = "NewBestBanner";
         private const string SpritePath = "Assets/Art/UI/round_card_r12.png";
+        private const string StarSpritePath = "Assets/Art/UI/star_white.png";
         private const string FontAssetPath = "Assets/Fonts/Kenney Mini Square SDF.asset";
         private const string OutlineMatPath = "Assets/Fonts/Kenney Mini Square SDF - HUD Outline.mat";
         private const string BannerOutlineMatPath = "Assets/Fonts/Kenney Mini Square SDF - Banner Outline.mat";
@@ -50,6 +51,8 @@ namespace VoxelRoad.EditorTools
             // 9-slice 임포트 설정이 늦게 적용될 수 있어 명시적으로 강제 재임포트
             if (System.IO.File.Exists(SpritePath))
                 AssetDatabase.ImportAsset(SpritePath, ImportAssetOptions.ForceUpdate);
+            if (System.IO.File.Exists(StarSpritePath))
+                AssetDatabase.ImportAsset(StarSpritePath, ImportAssetOptions.ForceUpdate);
 
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
             if (sprite == null)
@@ -57,9 +60,11 @@ namespace VoxelRoad.EditorTools
                 Debug.LogError($"[HudCardBuilder] 스프라이트 없음: {SpritePath}. 임포트 후 재시도.");
                 return;
             }
+            var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(StarSpritePath);
 
             var fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
             var fallbackFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
+            EnsureFallbackIsDynamic(fallbackFont);
             EnsureFontFallback(fontAsset, fallbackFont);
             var outlineMat = EnsureOutlineMaterial(fontAsset);
             var bannerOutlineMat = EnsureBannerOutlineMaterial(fontAsset);
@@ -81,7 +86,7 @@ namespace VoxelRoad.EditorTools
             DestroyExisting(hud, BannerName);
 
             var card = BuildScoreCard(hud, sprite, fontAsset, outlineMat);
-            var banner = BuildNewBestBanner(hud, sprite, fontAsset, bannerOutlineMat);
+            var banner = BuildNewBestBanner(hud, sprite, fontAsset, bannerOutlineMat, starSprite);
 
             var newScoreText = card.transform.Find("ScoreText_New").GetComponent<TMP_Text>();
 
@@ -245,7 +250,7 @@ namespace VoxelRoad.EditorTools
             return card;
         }
 
-        private static GameObject BuildNewBestBanner(GameObject hud, Sprite sprite, TMP_FontAsset font, Material outlineMat)
+        private static GameObject BuildNewBestBanner(GameObject hud, Sprite sprite, TMP_FontAsset font, Material outlineMat, Sprite starSprite)
         {
             var banner = new GameObject(BannerName, typeof(RectTransform), typeof(CanvasGroup));
             banner.transform.SetParent(hud.transform, false);
@@ -258,7 +263,7 @@ namespace VoxelRoad.EditorTools
 
             var hlg = banner.AddComponent<HorizontalLayoutGroup>();
             hlg.padding = new RectOffset(0, 0, 0, 0);
-            hlg.spacing = 0;
+            hlg.spacing = 16;
             hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.childControlWidth = true;
             hlg.childControlHeight = true;
@@ -269,7 +274,10 @@ namespace VoxelRoad.EditorTools
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // 배경/그림자 없이 텍스트만 표시
+            // 좌측 별 (텍스트와 같은 높이로 맞춤)
+            CreateStarImage(banner.transform, "LeftStar", starSprite);
+
+            // 텍스트 (별만 분리되어 폰트 글리프 한계 우회)
             var textGO = new GameObject("BannerText", typeof(RectTransform), typeof(LayoutElement));
             textGO.transform.SetParent(banner.transform, false);
             var tmp = textGO.AddComponent<TextMeshProUGUI>();
@@ -279,13 +287,15 @@ namespace VoxelRoad.EditorTools
             tmp.color = BrightYellowColor;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.richText = true;
-            // ★(U+2605)는 Kenney 폰트에 없으므로 fallback(LiberationSans SDF)에서 자동 조회
-            tmp.text = "<color=#FFFFFF>★</color> Best Record <color=#FFFFFF>★</color>";
+            tmp.text = "Best Record";
             tmp.enableAutoSizing = false;
             tmp.raycastTarget = false;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
             var le = textGO.GetComponent<LayoutElement>();
             le.preferredHeight = BannerTextHeight;
+
+            // 우측 별
+            CreateStarImage(banner.transform, "RightStar", starSprite);
 
             banner.AddComponent<NewBestBanner>();
 
@@ -295,6 +305,22 @@ namespace VoxelRoad.EditorTools
             cg.interactable = false;
 
             return banner;
+        }
+
+        private static void CreateStarImage(Transform parent, string name, Sprite starSprite)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            var img = go.GetComponent<Image>();
+            img.sprite = starSprite;
+            img.color = Color.white;
+            img.raycastTarget = false;
+            img.preserveAspect = true;
+            var le = go.GetComponent<LayoutElement>();
+            // 텍스트 cap-height에 시각적 균형 맞도록 폰트 사이즈의 약 90%
+            float starSize = BannerFontSize * 0.9f;
+            le.preferredWidth = starSize;
+            le.preferredHeight = starSize;
         }
 
         private static GameObject CreateBackdropImage(Transform parent, string name, Sprite sprite, Color32 color, float offsetY)
@@ -359,6 +385,17 @@ namespace VoxelRoad.EditorTools
             AssetDatabase.CreateAsset(mat, BannerOutlineMatPath);
             AssetDatabase.SaveAssets();
             return mat;
+        }
+
+        // LiberationSans SDF의 atlas가 정적 250자(ASCII+Latin1)로 베이크되어 ★ 같은 심볼 미포함.
+        // Dynamic 모드로 전환하면 런타임에 글리프를 atlas에 추가 렌더링 가능 (소스 LiberationSans.ttf에서 ★ 자동 조회).
+        private static void EnsureFallbackIsDynamic(TMP_FontAsset fallback)
+        {
+            if (fallback == null) return;
+            if (fallback.atlasPopulationMode == AtlasPopulationMode.Dynamic) return;
+            fallback.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+            EditorUtility.SetDirty(fallback);
+            AssetDatabase.SaveAssets();
         }
 
         private static void EnsureFontFallback(TMP_FontAsset primary, TMP_FontAsset fallback)
