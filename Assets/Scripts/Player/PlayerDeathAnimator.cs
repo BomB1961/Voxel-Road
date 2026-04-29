@@ -19,7 +19,7 @@ namespace VoxelRoad.Player
 
         [Header("Drown")]
         [SerializeField] private float _drownDuration = 1.5f;
-        [SerializeField] private float _drownDepth = 1.2f;
+        [SerializeField] private float _drownDepth = 2.5f;
         [Tooltip("머터리얼 alpha 페이드 활성화. URP transparent 머터리얼 필요.")]
         [SerializeField] private bool _drownFade = false;
 

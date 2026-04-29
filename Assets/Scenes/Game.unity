@@ -558,7 +558,7 @@ MonoBehaviour:
   _squashY: 0.1
   _squashXZ: 1.3
   _drownDuration: 1.5
-  _drownDepth: 1.2
+  _drownDepth: 2.5
   _drownFade: 0
   _fallDuration: 0.4
 --- !u!1 &589902922
