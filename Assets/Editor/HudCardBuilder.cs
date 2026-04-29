@@ -21,7 +21,7 @@ namespace VoxelRoad.EditorTools
         private const int CardLeft = 24;
         private const int CardTop = 24;
         private const int PadLeft = 20;
-        private const int PadRight = 24;
+        private const int PadRight = 36; // Pop 효과 시 텍스트 우측 확장 흡수 버퍼
         private const int PadTop = 12;
         private const int PadBottom = 12;
         private const int Spacing = 16;
@@ -112,6 +112,9 @@ namespace VoxelRoad.EditorTools
                 var so = new SerializedObject(pop);
                 var prop = so.FindProperty("_target");
                 if (prop != null) prop.objectReferenceValue = newScoreText.GetComponent<RectTransform>();
+                // Pop 효과가 카드 내부에서만 작동하도록 peakScale을 카드 패딩으로 흡수 가능한 수준으로 조정
+                var peakProp = so.FindProperty("_peakScale");
+                if (peakProp != null) peakProp.floatValue = 1.10f;
                 so.ApplyModifiedProperties();
                 EditorUtility.SetDirty(pop);
             }
