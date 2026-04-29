@@ -26,9 +26,7 @@ namespace VoxelRoad.EditorTools
         private const int StripeWidth = 6;
         private const int ScoreFontSize = 84;
         private const float ScoreTextHeight = 110f; // 84 * 1.2 + 약간 여유
-        private const float ScoreTextWidth = 520f;
         private const int BannerFontSize = 64;
-        private const float BannerTextWidth = 360f;
         private const float BannerTextHeight = 84f;
         private const float ShadowOffsetY = -4f;
 
@@ -233,9 +231,10 @@ namespace VoxelRoad.EditorTools
             tmp.text = "SCORE 00000";
             tmp.enableAutoSizing = false;
             tmp.raycastTarget = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             var textLE = textGO.GetComponent<LayoutElement>();
-            textLE.preferredWidth = ScoreTextWidth;
             textLE.preferredHeight = ScoreTextHeight;
+            // preferredWidth는 LayoutElement에서 강제하지 않음 → TMP의 자연 콘텐츠 폭 사용
 
             return card;
         }
@@ -277,8 +276,8 @@ namespace VoxelRoad.EditorTools
             tmp.text = "NEW BEST!";
             tmp.enableAutoSizing = false;
             tmp.raycastTarget = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             var le = textGO.GetComponent<LayoutElement>();
-            le.preferredWidth = BannerTextWidth;
             le.preferredHeight = BannerTextHeight;
 
             banner.AddComponent<NewBestBanner>();
