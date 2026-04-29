@@ -22,8 +22,8 @@ namespace VoxelRoad.UI
         [SerializeField] private Button _restartButton;
 
         [Header("Death Motion 후 패널 표시 지연 (초)")]
-        [SerializeField] private float _delayVehicle = 0.3f;
-        [SerializeField] private float _delayTrain = 0.35f;
+        [SerializeField] private float _delayVehicle = 0.7f;
+        [SerializeField] private float _delayTrain = 0.7f;
         [SerializeField] private float _delayDrown = 1.5f;
         [SerializeField] private float _delayFallOver = 0.5f; // OutOfBounds, Idle
 

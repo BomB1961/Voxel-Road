@@ -30,6 +30,8 @@ public class PlayerController : MonoBehaviour
     public int MaxZ { get; private set; }
     /// <summary>점프 호 이동 중이면 true. Log가 Trigger Enter를 무시하는 데 사용.</summary>
     public bool IsMoving => _isMoving;
+    /// <summary>마지막으로 플레이어를 사망시킨 차량/기차 Transform. PlayerDeathAnimator가 흡착·견인 모션에 사용.</summary>
+    public Transform LastImpactSource { get; private set; }
 
     private void Awake()
     {
@@ -110,13 +112,19 @@ public class PlayerController : MonoBehaviour
     {
         // 차량 충돌 사망: Player 쪽에서 감지해 Vehicle 이 GameManager 를 몰라도 되게 함
         if (!_gameManager.IsAlive) return;
-        if (other.GetComponentInParent<Vehicle>() != null)
+        var vehicle = other.GetComponentInParent<Vehicle>();
+        if (vehicle != null)
         {
+            LastImpactSource = vehicle.transform;
             _gameManager.KillPlayer(DeathReason.Vehicle);
             return;
         }
-        if (other.GetComponentInParent<Train>() != null)
+        var train = other.GetComponentInParent<Train>();
+        if (train != null)
+        {
+            LastImpactSource = train.transform;
             _gameManager.KillPlayer(DeathReason.Train);
+        }
     }
 
     private void HandleMoveInput(MoveDirection dir)
