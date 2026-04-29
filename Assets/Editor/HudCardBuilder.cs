@@ -15,6 +15,7 @@ namespace VoxelRoad.EditorTools
         private const string SpritePath = "Assets/Art/UI/round_card_r12.png";
         private const string FontAssetPath = "Assets/Fonts/Kenney Mini Square SDF.asset";
         private const string OutlineMatPath = "Assets/Fonts/Kenney Mini Square SDF - HUD Outline.mat";
+        private const string BannerOutlineMatPath = "Assets/Fonts/Kenney Mini Square SDF - Banner Outline.mat";
 
         private const int CardLeft = 24;
         private const int CardTop = 24;
@@ -26,13 +27,15 @@ namespace VoxelRoad.EditorTools
         private const int StripeWidth = 6;
         private const int ScoreFontSize = 84;
         private const float ScoreTextHeight = 110f; // 84 * 1.2 + 약간 여유
-        private const int BannerFontSize = 64;
-        private const float BannerTextHeight = 84f;
+        private const int BannerFontSize = 108;
+        private const float BannerTextHeight = 140f;
         private const float ShadowOffsetY = -4f;
 
         private static readonly Color32 BackdropColor = new Color32(0x15, 0x17, 0x1C, 220);
         private static readonly Color32 ShadowColor = new Color32(0, 0, 0, 110);
         private static readonly Color32 GoldColor = new Color32(0xFF, 0xD2, 0x3F, 0xFF);
+        private static readonly Color32 RedColor = new Color32(0xFF, 0x3B, 0x30, 0xFF);
+        private static readonly Color32 BrightYellowColor = new Color32(0xFF, 0xEB, 0x3B, 0xFF);
 
         [MenuItem(MenuPath)]
         public static void Build()
@@ -57,6 +60,7 @@ namespace VoxelRoad.EditorTools
 
             var fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
             var outlineMat = EnsureOutlineMaterial(fontAsset);
+            var bannerOutlineMat = EnsureBannerOutlineMaterial(fontAsset);
 
             var gameHud = Object.FindFirstObjectByType<GameHUD>(FindObjectsInactive.Include);
             var tracker = Object.FindFirstObjectByType<ScoreTracker>(FindObjectsInactive.Include);
@@ -75,7 +79,7 @@ namespace VoxelRoad.EditorTools
             DestroyExisting(hud, BannerName);
 
             var card = BuildScoreCard(hud, sprite, fontAsset, outlineMat);
-            var banner = BuildNewBestBanner(hud, sprite, fontAsset, outlineMat);
+            var banner = BuildNewBestBanner(hud, sprite, fontAsset, bannerOutlineMat);
 
             var newScoreText = card.transform.Find("ScoreText_New").GetComponent<TMP_Text>();
 
@@ -244,13 +248,14 @@ namespace VoxelRoad.EditorTools
             var banner = new GameObject(BannerName, typeof(RectTransform), typeof(CanvasGroup));
             banner.transform.SetParent(hud.transform, false);
             var rt = (RectTransform)banner.transform;
-            rt.anchorMin = new Vector2(0.5f, 1f);
-            rt.anchorMax = new Vector2(0.5f, 1f);
+            // 화면 정중앙 기준 위쪽으로 약간 오프셋 (Y+ = 위)
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0, -260);
+            rt.anchoredPosition = new Vector2(0, 240);
 
             var hlg = banner.AddComponent<HorizontalLayoutGroup>();
-            hlg.padding = new RectOffset(28, 28, 14, 14);
+            hlg.padding = new RectOffset(0, 0, 0, 0);
             hlg.spacing = 0;
             hlg.childAlignment = TextAnchor.MiddleCenter;
             hlg.childControlWidth = true;
@@ -262,18 +267,16 @@ namespace VoxelRoad.EditorTools
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            CreateBackdropImage(banner.transform, "Shadow", sprite, ShadowColor, ShadowOffsetY).transform.SetSiblingIndex(0);
-            CreateBackdropImage(banner.transform, "Backdrop", sprite, BackdropColor, 0f).transform.SetSiblingIndex(1);
-
+            // 배경/그림자 없이 텍스트만 표시
             var textGO = new GameObject("BannerText", typeof(RectTransform), typeof(LayoutElement));
             textGO.transform.SetParent(banner.transform, false);
             var tmp = textGO.AddComponent<TextMeshProUGUI>();
             if (font != null) tmp.font = font;
             if (outlineMat != null) tmp.fontSharedMaterial = outlineMat;
             tmp.fontSize = BannerFontSize;
-            tmp.color = GoldColor;
+            tmp.color = BrightYellowColor;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.text = "NEW BEST!";
+            tmp.text = "Best Record!";
             tmp.enableAutoSizing = false;
             tmp.raycastTarget = false;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
@@ -332,6 +335,38 @@ namespace VoxelRoad.EditorTools
             AssetDatabase.CreateAsset(mat, OutlineMatPath);
             AssetDatabase.SaveAssets();
             return mat;
+        }
+
+        private static Material EnsureBannerOutlineMaterial(TMP_FontAsset font)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(BannerOutlineMatPath);
+            if (existing != null)
+            {
+                ApplyBannerOutlineProps(existing);
+                EditorUtility.SetDirty(existing);
+                AssetDatabase.SaveAssets();
+                return existing;
+            }
+            if (font == null || font.material == null) return null;
+
+            var mat = new Material(font.material);
+            mat.name = "Kenney Mini Square SDF - Banner Outline";
+            ApplyBannerOutlineProps(mat);
+            AssetDatabase.CreateAsset(mat, BannerOutlineMatPath);
+            AssetDatabase.SaveAssets();
+            return mat;
+        }
+
+        private static void ApplyBannerOutlineProps(Material mat)
+        {
+            mat.EnableKeyword("OUTLINE_ON");
+            if (mat.HasProperty("_OutlineColor")) mat.SetColor("_OutlineColor", new Color(1f, 1f, 1f, 0.4f));
+            if (mat.HasProperty("_OutlineWidth")) mat.SetFloat("_OutlineWidth", 0.08f);
+            mat.EnableKeyword("UNDERLAY_ON");
+            if (mat.HasProperty("_UnderlayColor")) mat.SetColor("_UnderlayColor", new Color(0, 0, 0, 0.5f));
+            if (mat.HasProperty("_UnderlayOffsetX")) mat.SetFloat("_UnderlayOffsetX", 1f);
+            if (mat.HasProperty("_UnderlayOffsetY")) mat.SetFloat("_UnderlayOffsetY", -1f);
+            if (mat.HasProperty("_UnderlaySoftness")) mat.SetFloat("_UnderlaySoftness", 0.5f);
         }
     }
 }
