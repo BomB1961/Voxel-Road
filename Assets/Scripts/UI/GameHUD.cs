@@ -6,8 +6,9 @@ namespace VoxelRoad.UI
     /// <summary>인게임 상단 HUD. SCORE(좌측 상단) + HI-SCORE(우측 상단). 5자리 0-padding.</summary>
     public sealed class GameHUD : MonoBehaviour
     {
-        private const string ScoreFormat = "SCORE {0:D5}";
-        private const string BestFormat = "HI {0:D5}";
+        // TMP의 SetText 포매터는 C# string.Format과 다름. {0:D5} 대신 {0:00000} 사용해야 5자리 0-padding 정수가 됨.
+        private const string ScoreFormat = "SCORE {0:00000}";
+        private const string BestFormat = "HI {0:00000}";
 
         [SerializeField] private ScoreTracker _scoreTracker;
         [SerializeField] private TMP_Text _scoreText;
