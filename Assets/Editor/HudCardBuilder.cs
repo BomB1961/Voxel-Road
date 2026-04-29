@@ -28,6 +28,7 @@ namespace VoxelRoad.EditorTools
         private const int StripeWidth = 6;
         private const int ScoreFontSize = 84;
         private const float ScoreTextHeight = 110f; // 84 * 1.2 + 약간 여유
+        private const float DigitCellWidth = 52f; // 자리별 셀 폭 고정 — 자리 변화 시 layout jitter 방지
         private const int BannerFontSize = 108;
         private const float BannerTextHeight = 140f;
         private const float ShadowOffsetY = -4f;
@@ -89,7 +90,7 @@ namespace VoxelRoad.EditorTools
             var banner = BuildNewBestBanner(hud, sprite, fontAsset, bannerOutlineMat, starSprite);
 
             var newScoreText = card.transform.Find("ScoreLabel").GetComponent<TMP_Text>();
-            var digitsText = card.transform.Find("ScoreDigits").GetComponent<TMP_Text>();
+            var digitsContainer = card.transform.Find("ScoreDigits");
 
             // 참조 재배선
             if (gameHud != null)
@@ -117,26 +118,36 @@ namespace VoxelRoad.EditorTools
             if (pop != null)
             {
                 var so = new SerializedObject(pop);
-                var prop = so.FindProperty("_target");
-                // 숫자 부분만 Pop 대상 (SCORE 라벨은 정적)
-                if (prop != null) prop.objectReferenceValue = digitsText.GetComponent<RectTransform>();
-                var peakProp = so.FindProperty("_peakScale");
-                if (peakProp != null) peakProp.floatValue = 1.20f;
+                // PerDigitScoreDisplay가 자체 코루틴으로 자리별 Pop을 처리하므로 UIScorePop는 보이지 않는 원본 텍스트로 비활성화
+                if (origScoreText != null)
+                {
+                    var prop = so.FindProperty("_target");
+                    if (prop != null) prop.objectReferenceValue = origScoreText.GetComponent<RectTransform>();
+                }
                 so.ApplyModifiedProperties();
                 EditorUtility.SetDirty(pop);
             }
 
-            // 숫자 바인딩 와이어링
-            var digitsBinding = digitsText.GetComponent<ScoreDigitsBinding>();
-            if (digitsBinding != null && tracker != null)
+            // PerDigitScoreDisplay 와이어링
+            var perDigit = digitsContainer.GetComponent<PerDigitScoreDisplay>();
+            if (perDigit != null && tracker != null)
             {
-                var bso = new SerializedObject(digitsBinding);
+                var bso = new SerializedObject(perDigit);
                 var tProp = bso.FindProperty("_tracker");
-                var dProp = bso.FindProperty("_digitsText");
                 if (tProp != null) tProp.objectReferenceValue = tracker;
-                if (dProp != null) dProp.objectReferenceValue = digitsText;
+                var arrProp = bso.FindProperty("_digits");
+                if (arrProp != null)
+                {
+                    arrProp.arraySize = 5;
+                    for (int i = 0; i < 5; i++)
+                    {
+                        var elem = arrProp.GetArrayElementAtIndex(i);
+                        var dGo = digitsContainer.Find($"Digit{i}");
+                        if (dGo != null) elem.objectReferenceValue = dGo.GetComponent<TMP_Text>();
+                    }
+                }
                 bso.ApplyModifiedProperties();
-                EditorUtility.SetDirty(digitsBinding);
+                EditorUtility.SetDirty(perDigit);
             }
 
             // 배너 와이어링
@@ -270,24 +281,44 @@ namespace VoxelRoad.EditorTools
             var labelLE = labelGO.GetComponent<LayoutElement>();
             labelLE.preferredHeight = ScoreTextHeight;
 
-            // 숫자 부분만 별도 TMP — Pop 효과 대상
-            var digitsGO = new GameObject("ScoreDigits", typeof(RectTransform), typeof(LayoutElement));
-            digitsGO.transform.SetParent(card.transform, false);
-            var digitsTmp = digitsGO.AddComponent<TextMeshProUGUI>();
-            if (font != null) digitsTmp.font = font;
-            if (outlineMat != null) digitsTmp.fontSharedMaterial = outlineMat;
-            digitsTmp.fontSize = ScoreFontSize;
-            digitsTmp.color = Color.white;
-            digitsTmp.alignment = TextAlignmentOptions.MidlineLeft;
-            digitsTmp.text = "00000";
-            digitsTmp.enableAutoSizing = false;
-            digitsTmp.raycastTarget = false;
-            digitsTmp.textWrappingMode = TextWrappingModes.NoWrap;
-            var digitsLE = digitsGO.GetComponent<LayoutElement>();
-            digitsLE.preferredHeight = ScoreTextHeight;
+            // 5자리 숫자를 자리별 TMP로 분리한 컨테이너 — 변경된 자리만 Pop
+            var digitsContainer = new GameObject("ScoreDigits", typeof(RectTransform), typeof(LayoutElement));
+            digitsContainer.transform.SetParent(card.transform, false);
+            var digitsHLG = digitsContainer.AddComponent<HorizontalLayoutGroup>();
+            digitsHLG.padding = new RectOffset(0, 0, 0, 0);
+            digitsHLG.spacing = 0;
+            digitsHLG.childAlignment = TextAnchor.MiddleCenter;
+            digitsHLG.childControlWidth = true;
+            digitsHLG.childControlHeight = true;
+            digitsHLG.childForceExpandWidth = false;
+            digitsHLG.childForceExpandHeight = false;
+            var digitsContainerLE = digitsContainer.GetComponent<LayoutElement>();
+            digitsContainerLE.preferredHeight = ScoreTextHeight;
 
-            digitsGO.AddComponent<ScoreDigitsBinding>();
+            const int DigitCount = 5;
+            var digitTexts = new TextMeshProUGUI[DigitCount];
+            for (int i = 0; i < DigitCount; i++)
+            {
+                var go = new GameObject($"Digit{i}", typeof(RectTransform), typeof(LayoutElement));
+                go.transform.SetParent(digitsContainer.transform, false);
+                var d = go.AddComponent<TextMeshProUGUI>();
+                if (font != null) d.font = font;
+                if (outlineMat != null) d.fontSharedMaterial = outlineMat;
+                d.fontSize = ScoreFontSize;
+                d.color = Color.white;
+                d.alignment = TextAlignmentOptions.Center;
+                d.text = "0";
+                d.enableAutoSizing = false;
+                d.raycastTarget = false;
+                d.textWrappingMode = TextWrappingModes.NoWrap;
+                var le = go.GetComponent<LayoutElement>();
+                le.preferredWidth = DigitCellWidth;
+                le.preferredHeight = ScoreTextHeight;
+                digitTexts[i] = d;
+            }
 
+            var perDigit = digitsContainer.AddComponent<PerDigitScoreDisplay>();
+            // 와이어링은 빌더 본체 SerializedObject 단계에서 처리 (Build 메서드)
             return card;
         }
 
