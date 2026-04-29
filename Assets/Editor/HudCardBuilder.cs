@@ -88,14 +88,21 @@ namespace VoxelRoad.EditorTools
             var card = BuildScoreCard(hud, sprite, fontAsset, outlineMat);
             var banner = BuildNewBestBanner(hud, sprite, fontAsset, bannerOutlineMat, starSprite);
 
-            var newScoreText = card.transform.Find("ScoreText_New").GetComponent<TMP_Text>();
+            var newScoreText = card.transform.Find("ScoreLabel").GetComponent<TMP_Text>();
+            var digitsText = card.transform.Find("ScoreDigits").GetComponent<TMP_Text>();
 
             // 참조 재배선
             if (gameHud != null)
             {
                 var so = new SerializedObject(gameHud);
-                var sProp = so.FindProperty("_scoreText");
-                if (sProp != null) sProp.objectReferenceValue = newScoreText;
+                // GameHUD는 "SCORE 00042" 형태의 합쳐진 텍스트를 자신의 _scoreText에 쓰는데,
+                // 우리는 ScoreLabel(정적 'SCORE') / ScoreDigits(숫자만) 로 분리했으므로
+                // GameHUD의 출력이 보이는 새 라벨에 닿지 않도록 원본(비활성·alpha=0)으로 되돌림.
+                if (origScoreText != null)
+                {
+                    var sProp = so.FindProperty("_scoreText");
+                    if (sProp != null) sProp.objectReferenceValue = origScoreText;
+                }
                 // _bestScoreText는 GameHUD.Awake null 체크에 걸리므로 원본을 유지(비활성 상태)
                 if (origBestText != null)
                 {
@@ -111,12 +118,25 @@ namespace VoxelRoad.EditorTools
             {
                 var so = new SerializedObject(pop);
                 var prop = so.FindProperty("_target");
-                if (prop != null) prop.objectReferenceValue = newScoreText.GetComponent<RectTransform>();
-                // Pop 효과가 카드 내부에서만 작동하도록 peakScale을 카드 패딩으로 흡수 가능한 수준으로 조정
+                // 숫자 부분만 Pop 대상 (SCORE 라벨은 정적)
+                if (prop != null) prop.objectReferenceValue = digitsText.GetComponent<RectTransform>();
                 var peakProp = so.FindProperty("_peakScale");
-                if (peakProp != null) peakProp.floatValue = 1.10f;
+                if (peakProp != null) peakProp.floatValue = 1.20f;
                 so.ApplyModifiedProperties();
                 EditorUtility.SetDirty(pop);
+            }
+
+            // 숫자 바인딩 와이어링
+            var digitsBinding = digitsText.GetComponent<ScoreDigitsBinding>();
+            if (digitsBinding != null && tracker != null)
+            {
+                var bso = new SerializedObject(digitsBinding);
+                var tProp = bso.FindProperty("_tracker");
+                var dProp = bso.FindProperty("_digitsText");
+                if (tProp != null) tProp.objectReferenceValue = tracker;
+                if (dProp != null) dProp.objectReferenceValue = digitsText;
+                bso.ApplyModifiedProperties();
+                EditorUtility.SetDirty(digitsBinding);
             }
 
             // 배너 와이어링
@@ -234,21 +254,39 @@ namespace VoxelRoad.EditorTools
             stripeLE.preferredWidth = StripeWidth;
             stripeLE.preferredHeight = ScoreTextHeight;
 
-            var textGO = new GameObject("ScoreText_New", typeof(RectTransform), typeof(LayoutElement));
-            textGO.transform.SetParent(card.transform, false);
-            var tmp = textGO.AddComponent<TextMeshProUGUI>();
-            if (font != null) tmp.font = font;
-            if (outlineMat != null) tmp.fontSharedMaterial = outlineMat;
-            tmp.fontSize = ScoreFontSize;
-            tmp.color = Color.white;
-            tmp.alignment = TextAlignmentOptions.MidlineLeft;
-            tmp.text = "SCORE 00000";
-            tmp.enableAutoSizing = false;
-            tmp.raycastTarget = false;
-            tmp.textWrappingMode = TextWrappingModes.NoWrap;
-            var textLE = textGO.GetComponent<LayoutElement>();
-            textLE.preferredHeight = ScoreTextHeight;
-            // preferredWidth는 LayoutElement에서 강제하지 않음 → TMP의 자연 콘텐츠 폭 사용
+            // "SCORE" 정적 라벨 (Pop 대상 아님)
+            var labelGO = new GameObject("ScoreLabel", typeof(RectTransform), typeof(LayoutElement));
+            labelGO.transform.SetParent(card.transform, false);
+            var labelTmp = labelGO.AddComponent<TextMeshProUGUI>();
+            if (font != null) labelTmp.font = font;
+            if (outlineMat != null) labelTmp.fontSharedMaterial = outlineMat;
+            labelTmp.fontSize = ScoreFontSize;
+            labelTmp.color = Color.white;
+            labelTmp.alignment = TextAlignmentOptions.MidlineLeft;
+            labelTmp.text = "SCORE";
+            labelTmp.enableAutoSizing = false;
+            labelTmp.raycastTarget = false;
+            labelTmp.textWrappingMode = TextWrappingModes.NoWrap;
+            var labelLE = labelGO.GetComponent<LayoutElement>();
+            labelLE.preferredHeight = ScoreTextHeight;
+
+            // 숫자 부분만 별도 TMP — Pop 효과 대상
+            var digitsGO = new GameObject("ScoreDigits", typeof(RectTransform), typeof(LayoutElement));
+            digitsGO.transform.SetParent(card.transform, false);
+            var digitsTmp = digitsGO.AddComponent<TextMeshProUGUI>();
+            if (font != null) digitsTmp.font = font;
+            if (outlineMat != null) digitsTmp.fontSharedMaterial = outlineMat;
+            digitsTmp.fontSize = ScoreFontSize;
+            digitsTmp.color = Color.white;
+            digitsTmp.alignment = TextAlignmentOptions.MidlineLeft;
+            digitsTmp.text = "00000";
+            digitsTmp.enableAutoSizing = false;
+            digitsTmp.raycastTarget = false;
+            digitsTmp.textWrappingMode = TextWrappingModes.NoWrap;
+            var digitsLE = digitsGO.GetComponent<LayoutElement>();
+            digitsLE.preferredHeight = ScoreTextHeight;
+
+            digitsGO.AddComponent<ScoreDigitsBinding>();
 
             return card;
         }
