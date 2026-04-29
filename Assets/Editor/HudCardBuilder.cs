@@ -59,6 +59,8 @@ namespace VoxelRoad.EditorTools
             }
 
             var fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
+            var fallbackFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
+            EnsureFontFallback(fontAsset, fallbackFont);
             var outlineMat = EnsureOutlineMaterial(fontAsset);
             var bannerOutlineMat = EnsureBannerOutlineMaterial(fontAsset);
 
@@ -276,7 +278,9 @@ namespace VoxelRoad.EditorTools
             tmp.fontSize = BannerFontSize;
             tmp.color = BrightYellowColor;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.text = "Best Record!";
+            tmp.richText = true;
+            // ★(U+2605)는 Kenney 폰트에 없으므로 fallback(LiberationSans SDF)에서 자동 조회
+            tmp.text = "<color=#FFFFFF>★</color> Best Record <color=#FFFFFF>★</color>";
             tmp.enableAutoSizing = false;
             tmp.raycastTarget = false;
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
@@ -355,6 +359,17 @@ namespace VoxelRoad.EditorTools
             AssetDatabase.CreateAsset(mat, BannerOutlineMatPath);
             AssetDatabase.SaveAssets();
             return mat;
+        }
+
+        private static void EnsureFontFallback(TMP_FontAsset primary, TMP_FontAsset fallback)
+        {
+            if (primary == null || fallback == null) return;
+            if (primary.fallbackFontAssetTable == null)
+                primary.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset>();
+            if (primary.fallbackFontAssetTable.Contains(fallback)) return;
+            primary.fallbackFontAssetTable.Add(fallback);
+            EditorUtility.SetDirty(primary);
+            AssetDatabase.SaveAssets();
         }
 
         private static void ApplyBannerOutlineProps(Material mat)
