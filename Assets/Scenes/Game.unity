@@ -539,6 +539,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e30a591c4bb3fb49b3d8750602885b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+--- !u!114 &168922189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 168922180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e3e715e6432f7142a27ba90c924d202, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Player.PlayerDeathAnimator
+  _gameManager: {fileID: 1471619482}
+  _renderer: {fileID: 0}
+  _vehicleDuration: 0.2
+  _trainDuration: 0.25
+  _squashY: 0.1
+  _squashXZ: 1.3
+  _drownDuration: 1.5
+  _drownDepth: 1.2
+  _drownFade: 0
+  _fallDuration: 0.4
 --- !u!1 &589902922
 GameObject:
   m_ObjectHideFlags: 0
@@ -683,7 +705,7 @@ Transform:
   m_GameObject: {fileID: 589902922}
   serializedVersion: 2
   m_LocalRotation: {x: 0.53729963, y: 0, z: 0, w: 0.8433914}
-  m_LocalPosition: {x: 0, y: 20, z: -6}
+  m_LocalPosition: {x: 0, y: 22, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -777,7 +799,7 @@ Transform:
   m_GameObject: {fileID: 666744161}
   serializedVersion: 2
   m_LocalRotation: {x: 0.53729963, y: 0, z: 0, w: 0.8433914}
-  m_LocalPosition: {x: 0, y: 20, z: -6}
+  m_LocalPosition: {x: 0, y: 22, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3784,6 +3806,10 @@ MonoBehaviour:
   _bestScoreText: {fileID: 106941415}
   _newRecordBadge: {fileID: 909905807}
   _restartButton: {fileID: 1751141305}
+  _delayVehicle: 0.3
+  _delayTrain: 0.35
+  _delayDrown: 1.5
+  _delayFallOver: 0.5
 --- !u!1 &2039071840
 GameObject:
   m_ObjectHideFlags: 0
@@ -4271,6 +4297,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7239691996405858574, guid: c6187dcbf5013dc438026533509eb331, type: 3}
       insertIndex: -1
       addedObject: {fileID: 168922184}
+    - targetCorrespondingSourceObject: {fileID: 7239691996405858574, guid: c6187dcbf5013dc438026533509eb331, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 168922189}
   m_SourcePrefab: {fileID: 100100000, guid: c6187dcbf5013dc438026533509eb331, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

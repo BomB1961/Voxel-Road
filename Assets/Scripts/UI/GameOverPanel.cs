@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,6 +20,12 @@ namespace VoxelRoad.UI
         [SerializeField] private TMP_Text _bestScoreText;
         [SerializeField] private GameObject _newRecordBadge;
         [SerializeField] private Button _restartButton;
+
+        [Header("Death Motion 후 패널 표시 지연 (초)")]
+        [SerializeField] private float _delayVehicle = 0.3f;
+        [SerializeField] private float _delayTrain = 0.35f;
+        [SerializeField] private float _delayDrown = 1.5f;
+        [SerializeField] private float _delayFallOver = 0.5f; // OutOfBounds, Idle
 
         private void Awake()
         {
@@ -56,6 +63,27 @@ namespace VoxelRoad.UI
             _bestScoreText.SetText(BestScoreFormat, _scoreTracker.BestScore);
             _newRecordBadge.SetActive(_scoreTracker.IsNewRecord);
 
+            float delay = GetDelayForReason(reason);
+            if (delay <= 0f) _root.SetActive(true);
+            else StartCoroutine(ShowAfterDelay(delay));
+        }
+
+        private float GetDelayForReason(DeathReason reason)
+        {
+            switch (reason)
+            {
+                case DeathReason.Vehicle: return _delayVehicle;
+                case DeathReason.Train: return _delayTrain;
+                case DeathReason.Drown: return _delayDrown;
+                case DeathReason.OutOfBounds:
+                case DeathReason.Idle: return _delayFallOver;
+                default: return 0f;
+            }
+        }
+
+        private IEnumerator ShowAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
             _root.SetActive(true);
         }
 
