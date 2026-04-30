@@ -554,13 +554,22 @@ MonoBehaviour:
   _gameManager: {fileID: 1471619482}
   _player: {fileID: 0}
   _renderer: {fileID: 0}
-  _vehicleDuration: 0.2
-  _trainDuration: 0.25
+  _vehicleKnockbackGrids: 2
+  _vehicleArcHeight: 0.6
+  _vehicleFlightDuration: 0.4
+  _vehicleSlideGrids: 0.3
+  _vehicleSlideDuration: 0.1
+  _vehicleRotationTurns: 1.25
+  _trainSquashDuration: 0.08
+  _trainSlideGrids: 5
+  _trainSlideDuration: 0.42
+  _trainTiltDegrees: 5
+  _squashFallbackDuration: 0.2
   _squashY: 0.1
   _squashXZ: 1.3
-  _stickScaleZ: 0.2
-  _stickScaleX: 1.5
-  _stickScaleY: 0.4
+  _flatScaleX: 1.2
+  _flatScaleY: 0.5
+  _flatScaleZ: 1.2
   _drownDuration: 1.5
   _drownDepth: 2.5
   _drownFade: 0
@@ -3810,8 +3819,8 @@ MonoBehaviour:
   _bestScoreText: {fileID: 106941415}
   _newRecordBadge: {fileID: 909905807}
   _restartButton: {fileID: 1751141305}
-  _delayVehicle: 0.7
-  _delayTrain: 0.7
+  _delayVehicle: 0.6
+  _delayTrain: 0.6
   _delayDrown: 1.5
   _delayFallOver: 0.5
 --- !u!1 &2039071840
