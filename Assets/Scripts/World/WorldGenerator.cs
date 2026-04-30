@@ -104,8 +104,9 @@ namespace VoxelRoad.World
 
         private LaneType ChooseNextChunkType()
         {
-            // 테스트 모드: 청크 강제 Grass.
+            // 테스트 모드: 청크 강제 Grass / Rail.
             if (TestMode.ForceGrassOnly) return LaneType.Grass;
+            if (TestMode.ForceRailOnly) return LaneType.Rail;
             // 직전 타입과 같으면 덱 앞에서 건너뛰어 교착 방지.
             // 위험→Grass 강제는 단조로움 우려로 제거(2026-04-28 디렉터 결정) — 청크 단위 무작위 다양성 보존.
             for (int attempt = 0; attempt < 2; attempt++)

@@ -9,16 +9,20 @@ namespace VoxelRoad.Common
         [SerializeField] private bool _enabled = true;
         [SerializeField] private bool _resetBestScoreOnStart = true;
         [SerializeField] private bool _grassOnly = true;
+        [Tooltip("Rail 청크만 강제 (기차 사망 모션 테스트용). _grassOnly가 true면 그쪽이 우선.")]
+        [SerializeField] private bool _railOnly = false;
         [Tooltip("배너의 '첫 플레이 가드'(BestScore<=0 시 미발동)를 통과시키기 위해 1로 시작.")]
         [SerializeField] private int _bestScoreSeedValue = 1;
 
         public static bool ForceGrassOnly { get; private set; }
+        public static bool ForceRailOnly { get; private set; }
 
         private void Awake()
         {
             if (!_enabled)
             {
                 ForceGrassOnly = false;
+                ForceRailOnly = false;
                 return;
             }
 
@@ -31,11 +35,13 @@ namespace VoxelRoad.Common
             }
 
             ForceGrassOnly = _grassOnly;
+            ForceRailOnly = !_grassOnly && _railOnly;
         }
 
         private void OnDisable()
         {
             ForceGrassOnly = false;
+            ForceRailOnly = false;
         }
     }
 }
