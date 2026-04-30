@@ -8,9 +8,18 @@ namespace VoxelRoad.World
         [SerializeField] private MeshRenderer _ground;
         [SerializeField] private Transform _decorRoot;
 
+        [Header("Color Jitter")]
+        [SerializeField, Range(0f, 1f)] private float _patchDensity = 0.30f;
+        [SerializeField, Range(0f, 0.2f)] private float _patchJitter = 0.08f;
+
         private LaneConfigSO _config;
         private bool _isSafeStart;
         private readonly System.Collections.Generic.HashSet<int> _blockedCells = new();
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        // MonoBehaviour 정적 필드 초기자에서 native 객체(MaterialPropertyBlock)를 생성하면
+        // Unity가 CreateImpl을 거부해 타입 로딩이 실패함 → 첫 사용 시 지연 생성.
+        private static MaterialPropertyBlock _patchMpb;
 
         public override LaneType Type => LaneType.Grass;
 
@@ -65,6 +74,44 @@ namespace VoxelRoad.World
                     decor.transform.localScale = new Vector3(s, s, s);
                 _blockedCells.Add(x);
                 consecutiveBlocked++;
+            }
+
+            BuildColorPatches();
+        }
+
+        private void BuildColorPatches()
+        {
+            if (_ground == null || _patchDensity <= 0f) return;
+            Material baseMat = _ground.sharedMaterial;
+            if (baseMat == null || !baseMat.HasProperty(BaseColorId)) return;
+            Color baseColor = baseMat.GetColor(BaseColorId);
+
+            int halfSpan = Mathf.RoundToInt(_laneSpanX / 2f);
+            for (int x = -halfSpan; x < halfSpan; x++)
+            {
+                if (_blockedCells.Contains(x)) continue;
+                if (Random.value > _patchDensity) continue;
+
+                var patch = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                patch.name = "Patch";
+                patch.transform.SetParent(transform, false);
+                Destroy(patch.GetComponent<Collider>());
+                var mr = patch.GetComponent<MeshRenderer>();
+                mr.sharedMaterial = baseMat;
+
+                Color jittered = new Color(
+                    Mathf.Clamp01(baseColor.r + Random.Range(-_patchJitter, _patchJitter)),
+                    Mathf.Clamp01(baseColor.g + Random.Range(-_patchJitter, _patchJitter)),
+                    Mathf.Clamp01(baseColor.b + Random.Range(-_patchJitter, _patchJitter)),
+                    1f);
+                if (_patchMpb == null) _patchMpb = new MaterialPropertyBlock();
+                _patchMpb.Clear();
+                _patchMpb.SetColor(BaseColorId, jittered);
+                mr.SetPropertyBlock(_patchMpb);
+
+                // Grass 지면 y=-0.02 위에 살짝 떠 있게. 두께는 매우 얇게.
+                patch.transform.localPosition = new Vector3(x, -0.014f, 0f);
+                patch.transform.localScale = new Vector3(0.6f, 0.005f, 0.6f);
             }
         }
     }
