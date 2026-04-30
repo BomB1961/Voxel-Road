@@ -7,18 +7,19 @@ using VoxelRoad.Game;
 
 namespace VoxelRoad.UI
 {
-    /// <summary>사망 시 활성화되는 패널. 최종 점수·신기록·재시작 버튼.</summary>
+    /// <summary>사망 시 활성화되는 패널. 최종 점수·재시작 버튼. 신기록 갱신 알림은 인-게임 NewBestBanner에서 처리.</summary>
     public sealed class GameOverPanel : MonoBehaviour
     {
-        private const string FinalScoreFormat = "SCORE {0:D5}";
-        private const string BestScoreFormat = "HI-SCORE {0:D5}";
+        // TMP의 SetText 포매터는 C# string.Format과 다름. {0:D5}는 인식 안 되어 소수점 1자리 fallback 발생.
+        // {0:00000} 사용해야 5자리 0-padding 정수로 출력. ScoreCard와 동일 형식.
+        private const string FinalScoreFormat = "SCORE {0:00000}";
+        private const string BestScoreFormat = "BEST SCORE {0:00000}";
 
         [SerializeField] private GameManager _gameManager;
         [SerializeField] private ScoreTracker _scoreTracker;
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _finalScoreText;
         [SerializeField] private TMP_Text _bestScoreText;
-        [SerializeField] private GameObject _newRecordBadge;
         [SerializeField] private Button _restartButton;
 
         [Header("Death Motion 후 패널 표시 지연 (초)")]
@@ -31,7 +32,7 @@ namespace VoxelRoad.UI
         {
             if (_gameManager == null || _scoreTracker == null || _root == null
                 || _finalScoreText == null || _bestScoreText == null
-                || _newRecordBadge == null || _restartButton == null)
+                || _restartButton == null)
             {
                 Debug.LogError("[GameOverPanel] 필수 참조 미할당");
                 enabled = false;
@@ -39,7 +40,6 @@ namespace VoxelRoad.UI
             }
 
             _root.SetActive(false);
-            _newRecordBadge.SetActive(false);
             _restartButton.onClick.AddListener(Restart);
 
             // _root가 self를 가리키므로 SetActive(false) 직후 자기 자신이 비활성화 → OnEnable/OnDisable 경로로
@@ -59,7 +59,6 @@ namespace VoxelRoad.UI
 
             _finalScoreText.SetText(FinalScoreFormat, _scoreTracker.Score);
             _bestScoreText.SetText(BestScoreFormat, _scoreTracker.BestScore);
-            _newRecordBadge.SetActive(_scoreTracker.IsNewRecord);
 
             float delay = GetDelayForReason(reason);
             if (delay <= 0f) _root.SetActive(true);
