@@ -554,12 +554,13 @@ MonoBehaviour:
   _gameManager: {fileID: 1471619482}
   _player: {fileID: 0}
   _renderer: {fileID: 0}
-  _vehicleKnockbackGrids: 2
-  _vehicleArcHeight: 0.6
-  _vehicleFlightDuration: 0.4
+  _vehicleKnockbackGrids: 1.5
+  _vehicleArcHeight: 2.5
+  _vehicleFlightDuration: 0.7
   _vehicleSlideGrids: 0.3
   _vehicleSlideDuration: 0.1
   _vehicleRotationTurns: 1.25
+  _visualCenterY: 0.4
   _trainSquashDuration: 0.08
   _trainSlideGrids: 5
   _trainSlideDuration: 0.42
