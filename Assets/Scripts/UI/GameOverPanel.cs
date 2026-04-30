@@ -76,13 +76,21 @@ namespace VoxelRoad.UI
             // 활성 상태인 _gameManager에 코루틴 호스팅 위임.
             if (delay <= 0f)
             {
-                _root.SetActive(true);
-                _gameManager.StartCoroutine(DimAfterDelay());
+                ShowPanel();
             }
             else
             {
                 _gameManager.StartCoroutine(ShowAfterDelay(delay));
             }
+        }
+
+        private void ShowPanel()
+        {
+            _root.SetActive(true);
+            // 패널 표시와 동시에 게임 월드 정지 → 뒤로 보이는 화면이 사망 직후 프레임에 고정.
+            // 패널 내부 페이드는 unscaledDeltaTime/WaitForSecondsRealtime로 진행.
+            Time.timeScale = 0f;
+            _gameManager.StartCoroutine(DimAfterDelay());
         }
 
         private float GetDelayForReason(DeathReason reason)
@@ -100,18 +108,19 @@ namespace VoxelRoad.UI
 
         private IEnumerator ShowAfterDelay(float delay)
         {
+            // 사망 모션 진행을 봐야 하므로 여기는 timeScale의 영향을 받는 WaitForSeconds를 그대로 사용.
             yield return new WaitForSeconds(delay);
-            _root.SetActive(true);
-            yield return DimAfterDelay();
+            ShowPanel();
         }
 
         private IEnumerator DimAfterDelay()
         {
-            yield return new WaitForSeconds(_dimDelaySeconds);
+            // ShowPanel이 timeScale=0으로 만들었으므로 여기는 unscaled 계열로 진행.
+            yield return new WaitForSecondsRealtime(_dimDelaySeconds);
             float t = 0f;
             while (t < _dimFadeSeconds)
             {
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime;
                 float k = Mathf.Clamp01(t / _dimFadeSeconds);
                 float alpha = Mathf.Lerp(1f, _dimTargetAlpha, k);
                 SetTextAlpha(alpha);
@@ -138,11 +147,15 @@ namespace VoxelRoad.UI
 
         private static void Replay()
         {
+            // ShowPanel에서 timeScale=0으로 멈췄으므로, 씬 재시작 전에 반드시 1로 복구.
+            // (timeScale은 씬 로드 사이에서 유지됨)
+            Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         private static void Quit()
         {
+            Time.timeScale = 1f;
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
