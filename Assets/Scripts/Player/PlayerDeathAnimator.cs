@@ -43,15 +43,7 @@ namespace VoxelRoad.Player
         [Tooltip("백플립 회전 바퀴 수. 1.25 = 등 대고 누운 자세로 마무리")]
         [SerializeField] private float _sideKnockbackRotationTurns = 1.25f;
 
-        [Header("Train Death (즉시 압괴 + 직선 슬라이드)")]
-        [Tooltip("즉시 납작해지는 시간(초)")]
-        [SerializeField] private float _trainSquashDuration = 0.08f;
-        [Tooltip("기차 진행 방향으로 미끄러지는 거리(그리드)")]
-        [SerializeField] private float _trainSlideGrids = 5f;
-        [Tooltip("슬라이드 시간(초). easeOut으로 감속")]
-        [SerializeField] private float _trainSlideDuration = 0.42f;
-        [Tooltip("슬라이드 중 살짝 기울이는 각도. 끌리는 느낌 연출")]
-        [SerializeField] private float _trainTiltDegrees = 5f;
+        [Header("Train Death (쓰러져 기차에 밀려나감 — 회전 즉시 적용)")]
 
         [Header("Squash Fallback (impact 없을 때)")]
         [SerializeField] private float _squashFallbackDuration = 0.2f;
@@ -110,7 +102,7 @@ namespace VoxelRoad.Player
                 case DeathReason.Train:
                     if (impact == null) StartCoroutine(SquashRoutine(_squashFallbackDuration));
                     else if (_player != null && _player.LastImpactIsSideHit) StartCoroutine(SideKnockbackRoutine());
-                    else StartCoroutine(TrainDeathRoutine(impact));
+                    else StartCoroutine(TrainStickRoutine(impact));
                     break;
                 case DeathReason.Drown: StartCoroutine(DrownRoutine()); break;
                 case DeathReason.OutOfBounds: StartCoroutine(FallRoutine(true)); break;
@@ -251,57 +243,19 @@ namespace VoxelRoad.Player
             transform.rotation = flightEndRot;
         }
 
-        private IEnumerator TrainDeathRoutine(Transform impactSource)
+        private IEnumerator TrainStickRoutine(Transform train)
         {
-            Vector3 trainDir = impactSource.forward;
-            trainDir.y = 0f;
-            if (trainDir.sqrMagnitude > 1e-4f) trainDir = trainDir.normalized;
-            else trainDir = Vector3.right;
-
-            Vector3 startPos = transform.position;
-            Quaternion startRot = transform.rotation;
-            Vector3 startScale = transform.localScale;
-            Vector3 flatScale = new Vector3(
-                startScale.x * _flatScaleX,
-                startScale.y * _flatScaleY,
-                startScale.z * _flatScaleZ);
-
-            // === 페이즈 1: 즉시 압괴 ===
-            float elapsed = 0f;
-            while (elapsed < _trainSquashDuration)
+            // 부착(SetParent) 안 함 — Train은 TrainSpawner에서 (lx,1,1) 비균일 스케일이 적용되어 있어
+            // 자식으로 들어가면 X축으로 늘어나는 시어 발생. 매 프레임 train 이동 델타만 위치에 반영.
+            // 회전·자세 변경 없음 — 서있던 상태 그대로 X축 방향으로 화면 밖 이탈.
+            Vector3 lastTrainPos = train.position;
+            while (train != null)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _trainSquashDuration);
-                transform.localScale = Vector3.Lerp(startScale, flatScale, t);
+                Vector3 delta = train.position - lastTrainPos;
+                transform.position += delta;
+                lastTrainPos = train.position;
                 yield return null;
             }
-            transform.localScale = flatScale;
-
-            // 슬라이드 중 살짝 기울임. 진행 방향과 수직인 수평축으로 회전.
-            Vector3 tiltAxis = trainDir.x > 0f ? Vector3.back : Vector3.forward;
-            Quaternion tiltRot = Quaternion.AngleAxis(_trainTiltDegrees, tiltAxis) * startRot;
-
-            // === 페이즈 2: 직선 슬라이드 ===
-            Vector3 slideStartPos = transform.position;
-            Vector3 slideEndPos = new Vector3(
-                slideStartPos.x + trainDir.x * _trainSlideGrids,
-                0f,
-                slideStartPos.z + trainDir.z * _trainSlideGrids);
-
-            elapsed = 0f;
-            while (elapsed < _trainSlideDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _trainSlideDuration);
-                float eased = t * (2f - t); // easeOut: 초반 빠르게 → 후반 감속
-                Vector3 pos = Vector3.Lerp(slideStartPos, slideEndPos, eased);
-                pos.y = 0f;
-                transform.position = pos;
-                transform.rotation = Quaternion.Slerp(startRot, tiltRot, t);
-                yield return null;
-            }
-            transform.position = slideEndPos;
-            transform.rotation = tiltRot;
         }
 
         private IEnumerator SquashRoutine(float duration)
