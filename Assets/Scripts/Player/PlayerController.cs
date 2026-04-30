@@ -32,6 +32,9 @@ public class PlayerController : MonoBehaviour
     public bool IsMoving => _isMoving;
     /// <summary>마지막으로 플레이어를 사망시킨 차량/기차 Transform. PlayerDeathAnimator가 흡착·견인 모션에 사용.</summary>
     public Transform LastImpactSource { get; private set; }
+    /// <summary>충돌 시 점프 중이었는지 = 플레이어가 측면으로 돌진(true) / 가만히 있는 플레이어를 차량·기차가 침(false).
+    /// PlayerDeathAnimator가 정면/측면 분기에 사용.</summary>
+    public bool LastImpactIsSideHit { get; private set; }
 
     private void Awake()
     {
@@ -116,6 +119,7 @@ public class PlayerController : MonoBehaviour
         if (vehicle != null)
         {
             LastImpactSource = vehicle.transform;
+            LastImpactIsSideHit = _isMoving;
             _gameManager.KillPlayer(DeathReason.Vehicle);
             return;
         }
@@ -123,6 +127,7 @@ public class PlayerController : MonoBehaviour
         if (train != null)
         {
             LastImpactSource = train.transform;
+            LastImpactIsSideHit = _isMoving;
             _gameManager.KillPlayer(DeathReason.Train);
         }
     }

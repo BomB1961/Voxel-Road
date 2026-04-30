@@ -29,6 +29,20 @@ namespace VoxelRoad.Player
         [Tooltip("플레이어 비주얼 몸통 중심의 Y 오프셋(피벗으로부터). 회전 피벗 보정에 사용. 0이면 피벗(발) 기준 회전이라 공전 현상 발생.")]
         [SerializeField] private float _visualCenterY = 0.4f;
 
+        [Header("Side Knockback (점프 중 차량/기차 측면 충돌 → 뒤로 튕김)")]
+        [Tooltip("플레이어 forward 반대 방향으로 튕기는 거리(그리드)")]
+        [SerializeField] private float _sideKnockbackGrids = 2.5f;
+        [Tooltip("포물선 최고 높이(월드 유닛)")]
+        [SerializeField] private float _sideKnockbackArcHeight = 1.5f;
+        [Tooltip("비행 페이즈 시간(초)")]
+        [SerializeField] private float _sideKnockbackFlightDuration = 0.55f;
+        [Tooltip("착지 후 슬라이드 거리(그리드)")]
+        [SerializeField] private float _sideKnockbackSlideGrids = 0.3f;
+        [Tooltip("착지 후 슬라이드 시간(초)")]
+        [SerializeField] private float _sideKnockbackSlideDuration = 0.1f;
+        [Tooltip("백플립 회전 바퀴 수")]
+        [SerializeField] private float _sideKnockbackRotationTurns = 1.0f;
+
         [Header("Train Death (즉시 압괴 + 직선 슬라이드)")]
         [Tooltip("즉시 납작해지는 시간(초)")]
         [SerializeField] private float _trainSquashDuration = 0.08f;
@@ -89,12 +103,14 @@ namespace VoxelRoad.Player
             switch (reason)
             {
                 case DeathReason.Vehicle:
-                    if (impact != null) StartCoroutine(VehicleDeathRoutine(impact));
-                    else StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    if (impact == null) StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    else if (_player != null && _player.LastImpactIsSideHit) StartCoroutine(SideKnockbackRoutine());
+                    else StartCoroutine(VehicleDeathRoutine(impact));
                     break;
                 case DeathReason.Train:
-                    if (impact != null) StartCoroutine(TrainDeathRoutine(impact));
-                    else StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    if (impact == null) StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    else if (_player != null && _player.LastImpactIsSideHit) StartCoroutine(SideKnockbackRoutine());
+                    else StartCoroutine(TrainDeathRoutine(impact));
                     break;
                 case DeathReason.Drown: StartCoroutine(DrownRoutine()); break;
                 case DeathReason.OutOfBounds: StartCoroutine(FallRoutine(true)); break;
@@ -162,6 +178,76 @@ namespace VoxelRoad.Player
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / _vehicleSlideDuration);
                 float eased = t * (2f - t); // easeOut
+                Vector3 center = Vector3.Lerp(slideStartCenter, slideEndCenter, eased);
+                transform.position = center - flightEndRot * pivotOffset;
+                transform.localScale = Vector3.Lerp(startScale, flatScale, t);
+                yield return null;
+            }
+            transform.position = slideEndCenter - flightEndRot * pivotOffset;
+            transform.localScale = flatScale;
+            transform.rotation = flightEndRot;
+        }
+
+        private IEnumerator SideKnockbackRoutine()
+        {
+            // 플레이어 정면 반대 방향으로 튕김 (= 뛰어들어간 방향의 반대로 백플립).
+            // 차량·기차 측면에 정면으로 박은 직후의 운동량 보존 묘사.
+            Vector3 knockbackDir = -transform.forward;
+            knockbackDir.y = 0f;
+            if (knockbackDir.sqrMagnitude > 1e-4f) knockbackDir = knockbackDir.normalized;
+            else knockbackDir = Vector3.back;
+
+            // 백플립 회전축 = -player.right. 머리가 뒤로 넘어가는 방향.
+            Vector3 rotationAxis = -transform.right;
+            float totalRotationDeg = 360f * _sideKnockbackRotationTurns;
+
+            Vector3 startPos = transform.position;
+            Quaternion startRot = transform.rotation;
+            Vector3 startScale = transform.localScale;
+            Vector3 flatScale = new Vector3(
+                startScale.x * _flatScaleX,
+                startScale.y * _flatScaleY,
+                startScale.z * _flatScaleZ);
+
+            // 회전 피벗 보정 (VehicleDeathRoutine과 동일 방식)
+            Vector3 pivotOffset = new Vector3(0f, _visualCenterY, 0f);
+
+            Vector3 centerStart = startPos + Vector3.up * _visualCenterY;
+            Vector3 centerEnd = new Vector3(
+                startPos.x + knockbackDir.x * _sideKnockbackGrids,
+                _visualCenterY,
+                startPos.z + knockbackDir.z * _sideKnockbackGrids);
+
+            // === 페이즈 1: 비행 (포물선 + 백플립, 몸통 중심 기준) ===
+            float elapsed = 0f;
+            while (elapsed < _sideKnockbackFlightDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / _sideKnockbackFlightDuration);
+                Vector3 center = Vector3.Lerp(centerStart, centerEnd, t);
+                center.y += 4f * _sideKnockbackArcHeight * t * (1f - t);
+                Quaternion currentRot = Quaternion.AngleAxis(totalRotationDeg * t, rotationAxis) * startRot;
+                transform.rotation = currentRot;
+                transform.position = center - currentRot * pivotOffset;
+                yield return null;
+            }
+            Quaternion flightEndRot = Quaternion.AngleAxis(totalRotationDeg, rotationAxis) * startRot;
+            transform.rotation = flightEndRot;
+            transform.position = centerEnd - flightEndRot * pivotOffset;
+
+            // === 페이즈 2: 슬라이드 + 납작 ===
+            Vector3 slideStartCenter = centerEnd;
+            Vector3 slideEndCenter = new Vector3(
+                centerEnd.x + knockbackDir.x * _sideKnockbackSlideGrids,
+                _visualCenterY,
+                centerEnd.z + knockbackDir.z * _sideKnockbackSlideGrids);
+
+            elapsed = 0f;
+            while (elapsed < _sideKnockbackSlideDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / _sideKnockbackSlideDuration);
+                float eased = t * (2f - t);
                 Vector3 center = Vector3.Lerp(slideStartCenter, slideEndCenter, eased);
                 transform.position = center - flightEndRot * pivotOffset;
                 transform.localScale = Vector3.Lerp(startScale, flatScale, t);
