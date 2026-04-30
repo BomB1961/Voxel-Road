@@ -139,6 +139,7 @@ MonoBehaviour:
   _track: {fileID: 750756989711131786}
   _spawner: {fileID: 2190333788882635808}
   _trainConfig: {fileID: 11400000, guid: 6b9fd4291b05fac42b4800b7a782bfb6, type: 2}
+  _sleeperMaterial: {fileID: 2100000, guid: 8b7e1c2d3a4f5e6d7c8b9a0f1e2d3c4b, type: 2}
 --- !u!1 &8311135219627795256
 GameObject:
   m_ObjectHideFlags: 0

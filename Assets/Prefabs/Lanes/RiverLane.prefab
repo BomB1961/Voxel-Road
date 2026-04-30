@@ -49,6 +49,8 @@ MonoBehaviour:
   _water: {fileID: 750756989711131786}
   _spawner: {fileID: 5179076024151144230}
   _logConfig: {fileID: 11400000, guid: 78a2a559ff8463b41baa847e12d2935f, type: 2}
+  _lilyPadMaterial: {fileID: 2100000, guid: 4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d, type: 2}
+  _lilyPadDensity: 0.25
 --- !u!1 &8311135219627795256
 GameObject:
   m_ObjectHideFlags: 0
