@@ -8,45 +8,27 @@ namespace VoxelRoad.Player
     public sealed class PlayerDeathAnimator : MonoBehaviour
     {
         [SerializeField] private GameManager _gameManager;
-        [Tooltip("차량/기차 충돌 모션에 LastImpactSource를 읽기 위함. 같은 GameObject에 있으면 자동 GetComponent.")]
+        [Tooltip("차량/기차 흡착 모션에 LastImpactSource를 읽기 위함. 같은 GameObject에 있으면 자동 GetComponent.")]
         [SerializeField] private PlayerController _player;
         [Tooltip("Drown 페이드용. null이면 페이드 스킵.")]
         [SerializeField] private Renderer _renderer;
 
-        [Header("Vehicle Death (공중제비 + 포물선)")]
-        [Tooltip("차량 진행 방향으로 튕겨 나가는 수평 거리(그리드)")]
-        [SerializeField] private float _vehicleKnockbackGrids = 2f;
-        [Tooltip("포물선 최고 높이(월드 유닛)")]
-        [SerializeField] private float _vehicleArcHeight = 0.6f;
-        [Tooltip("비행 페이즈 시간(초)")]
-        [SerializeField] private float _vehicleFlightDuration = 0.4f;
-        [Tooltip("착지 후 슬라이드 거리(그리드)")]
-        [SerializeField] private float _vehicleSlideGrids = 0.3f;
-        [Tooltip("착지 후 슬라이드 시간(초)")]
-        [SerializeField] private float _vehicleSlideDuration = 0.1f;
-        [Tooltip("회전 바퀴 수. 1.25 = 등 대고 누운 자세로 마무리")]
-        [SerializeField] private float _vehicleRotationTurns = 1.25f;
-        [Tooltip("플레이어 비주얼 몸통 중심의 Y 오프셋(피벗으로부터). 회전 피벗 보정에 사용. 0이면 피벗(발) 기준 회전이라 공전 현상 발생.")]
-        [SerializeField] private float _visualCenterY = 0.4f;
-
-        [Header("Train Death (즉시 압괴 + 직선 슬라이드)")]
-        [Tooltip("즉시 납작해지는 시간(초)")]
-        [SerializeField] private float _trainSquashDuration = 0.08f;
-        [Tooltip("기차 진행 방향으로 미끄러지는 거리(그리드)")]
-        [SerializeField] private float _trainSlideGrids = 5f;
-        [Tooltip("슬라이드 시간(초). easeOut으로 감속")]
-        [SerializeField] private float _trainSlideDuration = 0.42f;
-        [Tooltip("슬라이드 중 살짝 기울이는 각도. 끌리는 느낌 연출")]
-        [SerializeField] private float _trainTiltDegrees = 5f;
-
-        [Header("Squash Fallback (impact 없을 때)")]
-        [SerializeField] private float _squashFallbackDuration = 0.2f;
+        [Header("Vehicle/Train Squash")]
+        [SerializeField] private float _vehicleDuration = 0.2f;
+        [SerializeField] private float _trainDuration = 0.25f;
         [SerializeField] private float _squashY = 0.1f;
         [SerializeField] private float _squashXZ = 1.3f;
 
-        [Header("Flat Scale (Vehicle/Train 공통 납작 스케일)")]
+        [Header("Vehicle Death (옆/앞으로 쓰러짐 + 바닥 흡착)")]
+        [Tooltip("|player.forward.z|이 이 값보다 크면 정면(+Z) 상태로 판정 → 옆으로(world X) 쓰러짐. 미만이면 회전 상태 → 자기 forward 방향으로 앞으로 쓰러짐.")]
+        [SerializeField] private float _facingDefaultThreshold = 0.7f;
+        [Tooltip("쓰러질 때 진행 방향으로 밀려나는 거리(월드 유닛)")]
+        [SerializeField] private float _knockbackDistance = 0.5f;
+        [Tooltip("쓰러진 후 X축 스케일 (월드 X 또는 player local X)")]
         [SerializeField] private float _flatScaleX = 1.2f;
+        [Tooltip("쓰러진 후 Y축 스케일")]
         [SerializeField] private float _flatScaleY = 0.5f;
+        [Tooltip("쓰러진 후 Z축 스케일")]
         [SerializeField] private float _flatScaleZ = 1.2f;
 
         [Header("Drown")]
@@ -89,12 +71,12 @@ namespace VoxelRoad.Player
             switch (reason)
             {
                 case DeathReason.Vehicle:
-                    if (impact != null) StartCoroutine(VehicleDeathRoutine(impact));
-                    else StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    if (impact != null) StartCoroutine(VehicleDeathRoutine(impact, _vehicleDuration));
+                    else StartCoroutine(SquashRoutine(_vehicleDuration));
                     break;
                 case DeathReason.Train:
-                    if (impact != null) StartCoroutine(TrainDeathRoutine(impact));
-                    else StartCoroutine(SquashRoutine(_squashFallbackDuration));
+                    if (impact != null) StartCoroutine(VehicleDeathRoutine(impact, _trainDuration));
+                    else StartCoroutine(SquashRoutine(_trainDuration));
                     break;
                 case DeathReason.Drown: StartCoroutine(DrownRoutine()); break;
                 case DeathReason.OutOfBounds: StartCoroutine(FallRoutine(true)); break;
@@ -102,127 +84,64 @@ namespace VoxelRoad.Player
             }
         }
 
-        private IEnumerator VehicleDeathRoutine(Transform impactSource)
+        private IEnumerator VehicleDeathRoutine(Transform impactSource, float duration)
         {
+            // 차량 진행 방향(±X) 추출
             Vector3 vehicleDir = impactSource.forward;
             vehicleDir.y = 0f;
             if (vehicleDir.sqrMagnitude > 1e-4f) vehicleDir = vehicleDir.normalized;
             else vehicleDir = Vector3.right;
 
-            // 차량이 +X면 -Z축, -X면 +Z축. 우수좌표계 + 진행 방향 forward somersault.
-            Vector3 rotationAxis = vehicleDir.x > 0f ? Vector3.back : Vector3.forward;
-            float totalRotationDeg = 360f * _vehicleRotationTurns;
+            Quaternion startRot = transform.rotation;
+            Quaternion endRot;
+            Vector3 pushDir;
+
+            // 플레이어 정면 판정: |forward.z| 큰 → 정면(+Z) 상태, 작은 → 회전 상태
+            bool facingDefault = Mathf.Abs(transform.forward.z) >= _facingDefaultThreshold;
+
+            if (facingDefault)
+            {
+                // 옆으로 쓰러짐 — 머리가 차량 진행 방향 쪽으로 가도록 world Z축 회전.
+                // 캐릭터 up(+Y)을 vehicleDir(±X)로 회전: vehicleDir.x>0 -> -90°, <0 -> +90°
+                float angle = vehicleDir.x > 0f ? -90f : 90f;
+                endRot = Quaternion.AngleAxis(angle, Vector3.forward) * startRot;
+                pushDir = vehicleDir;
+            }
+            else
+            {
+                // 앞으로 쓰러짐 — 자기 forward 축으로 엎어짐 (local right axis 90°).
+                endRot = startRot * Quaternion.Euler(90f, 0f, 0f);
+                Vector3 fwd = transform.forward;
+                fwd.y = 0f;
+                if (fwd.sqrMagnitude > 1e-4f) fwd = fwd.normalized;
+                else fwd = vehicleDir;
+                pushDir = fwd;
+            }
 
             Vector3 startPos = transform.position;
-            Quaternion startRot = transform.rotation;
+            Vector3 endPos = startPos + pushDir * _knockbackDistance;
+            endPos.y = 0f; // 바닥 흡착
+
             Vector3 startScale = transform.localScale;
-            Vector3 flatScale = new Vector3(
+            Vector3 endScale = new Vector3(
                 startScale.x * _flatScaleX,
                 startScale.y * _flatScaleY,
                 startScale.z * _flatScaleZ);
 
-            // 회전 피벗 보정: 비주얼 몸통 중심이 궤적을 따르도록.
-            // 피벗(발) 기준 회전 시 발이 차량 위치에 있으면 몸통이 차량 주위를 공전하는 효과 발생.
-            // 이를 막기 위해 매 프레임 (몸통 중심 - 회전된 오프셋) = 피벗 위치로 역산.
-            Vector3 pivotOffset = new Vector3(0f, _visualCenterY, 0f);
-
-            Vector3 centerStart = startPos + Vector3.up * _visualCenterY;
-            Vector3 centerEnd = new Vector3(
-                startPos.x + vehicleDir.x * _vehicleKnockbackGrids,
-                _visualCenterY,
-                startPos.z + vehicleDir.z * _vehicleKnockbackGrids);
-
-            // === 페이즈 1: 비행 (포물선 + 회전, 몸통 중심 기준) ===
             float elapsed = 0f;
-            while (elapsed < _vehicleFlightDuration)
+            while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _vehicleFlightDuration);
-                Vector3 center = Vector3.Lerp(centerStart, centerEnd, t);
-                center.y += 4f * _vehicleArcHeight * t * (1f - t);
-                Quaternion currentRot = Quaternion.AngleAxis(totalRotationDeg * t, rotationAxis) * startRot;
-                transform.rotation = currentRot;
-                transform.position = center - currentRot * pivotOffset;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - (1f - t) * (1f - t);
+                transform.rotation = Quaternion.Slerp(startRot, endRot, eased);
+                transform.position = Vector3.Lerp(startPos, endPos, eased);
+                transform.localScale = Vector3.Lerp(startScale, endScale, eased);
                 yield return null;
             }
-            Quaternion flightEndRot = Quaternion.AngleAxis(totalRotationDeg, rotationAxis) * startRot;
-            transform.rotation = flightEndRot;
-            transform.position = centerEnd - flightEndRot * pivotOffset;
-
-            // === 페이즈 2: 슬라이드 + 납작 ===
-            Vector3 slideStartCenter = centerEnd;
-            Vector3 slideEndCenter = new Vector3(
-                centerEnd.x + vehicleDir.x * _vehicleSlideGrids,
-                _visualCenterY,
-                centerEnd.z + vehicleDir.z * _vehicleSlideGrids);
-
-            elapsed = 0f;
-            while (elapsed < _vehicleSlideDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _vehicleSlideDuration);
-                float eased = t * (2f - t); // easeOut
-                Vector3 center = Vector3.Lerp(slideStartCenter, slideEndCenter, eased);
-                transform.position = center - flightEndRot * pivotOffset;
-                transform.localScale = Vector3.Lerp(startScale, flatScale, t);
-                yield return null;
-            }
-            transform.position = slideEndCenter - flightEndRot * pivotOffset;
-            transform.localScale = flatScale;
-            transform.rotation = flightEndRot;
-        }
-
-        private IEnumerator TrainDeathRoutine(Transform impactSource)
-        {
-            Vector3 trainDir = impactSource.forward;
-            trainDir.y = 0f;
-            if (trainDir.sqrMagnitude > 1e-4f) trainDir = trainDir.normalized;
-            else trainDir = Vector3.right;
-
-            Vector3 startPos = transform.position;
-            Quaternion startRot = transform.rotation;
-            Vector3 startScale = transform.localScale;
-            Vector3 flatScale = new Vector3(
-                startScale.x * _flatScaleX,
-                startScale.y * _flatScaleY,
-                startScale.z * _flatScaleZ);
-
-            // === 페이즈 1: 즉시 압괴 ===
-            float elapsed = 0f;
-            while (elapsed < _trainSquashDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _trainSquashDuration);
-                transform.localScale = Vector3.Lerp(startScale, flatScale, t);
-                yield return null;
-            }
-            transform.localScale = flatScale;
-
-            // 슬라이드 중 살짝 기울임. 진행 방향과 수직인 수평축으로 회전.
-            Vector3 tiltAxis = trainDir.x > 0f ? Vector3.back : Vector3.forward;
-            Quaternion tiltRot = Quaternion.AngleAxis(_trainTiltDegrees, tiltAxis) * startRot;
-
-            // === 페이즈 2: 직선 슬라이드 ===
-            Vector3 slideStartPos = transform.position;
-            Vector3 slideEndPos = new Vector3(
-                slideStartPos.x + trainDir.x * _trainSlideGrids,
-                0f,
-                slideStartPos.z + trainDir.z * _trainSlideGrids);
-
-            elapsed = 0f;
-            while (elapsed < _trainSlideDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / _trainSlideDuration);
-                float eased = t * (2f - t); // easeOut: 초반 빠르게 → 후반 감속
-                Vector3 pos = Vector3.Lerp(slideStartPos, slideEndPos, eased);
-                pos.y = 0f;
-                transform.position = pos;
-                transform.rotation = Quaternion.Slerp(startRot, tiltRot, t);
-                yield return null;
-            }
-            transform.position = slideEndPos;
-            transform.rotation = tiltRot;
+            transform.rotation = endRot;
+            transform.position = endPos;
+            transform.localScale = endScale;
         }
 
         private IEnumerator SquashRoutine(float duration)
