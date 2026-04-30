@@ -11,10 +11,8 @@ namespace VoxelRoad.UI
     /// 패널 표시 후 일정 시간이 지나면 텍스트들을 페이드 처리해 버튼이 시선의 주인공이 되도록 함.</summary>
     public sealed class GameOverPanel : MonoBehaviour
     {
-        // TMP의 SetText 포매터는 C# string.Format과 다름. {0:D5}는 인식 안 되어 소수점 1자리 fallback 발생.
-        // {0:00000} 사용해야 5자리 0-padding 정수로 출력. ScoreCard와 동일 형식.
-        private const string FinalScoreFormat = "SCORE {0:00000}";
-        private const string BestScoreFormat = "BEST SCORE {0:00000}";
+        private const string FinalScoreFormat = "SCORE {0}";
+        private const string BestScoreFormat = "BEST SCORE {0}";
 
         [SerializeField] private GameManager _gameManager;
         [SerializeField] private ScoreTracker _scoreTracker;
