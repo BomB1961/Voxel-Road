@@ -41,15 +41,13 @@ namespace VoxelRoad.UI
             _root.SetActive(false);
             _newRecordBadge.SetActive(false);
             _restartButton.onClick.AddListener(Restart);
+
+            // _root가 self를 가리키므로 SetActive(false) 직후 자기 자신이 비활성화 → OnEnable/OnDisable 경로로
+            // 구독하면 죽음 이벤트가 도달하지 않음. Awake에서 직접 구독하고 OnDestroy에서 해제.
+            _gameManager.OnPlayerDied += HandlePlayerDied;
         }
 
-        private void OnEnable()
-        {
-            if (_gameManager != null)
-                _gameManager.OnPlayerDied += HandlePlayerDied;
-        }
-
-        private void OnDisable()
+        private void OnDestroy()
         {
             if (_gameManager != null)
                 _gameManager.OnPlayerDied -= HandlePlayerDied;
@@ -65,7 +63,9 @@ namespace VoxelRoad.UI
 
             float delay = GetDelayForReason(reason);
             if (delay <= 0f) _root.SetActive(true);
-            else StartCoroutine(ShowAfterDelay(delay));
+            // _root가 self를 가리켜 Awake에서 비활성화 → this.StartCoroutine 불가.
+            // 활성 상태인 _gameManager에 코루틴 호스팅 위임.
+            else _gameManager.StartCoroutine(ShowAfterDelay(delay));
         }
 
         private float GetDelayForReason(DeathReason reason)
