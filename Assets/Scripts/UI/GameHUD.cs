@@ -3,21 +3,19 @@ using UnityEngine;
 
 namespace VoxelRoad.UI
 {
-    /// <summary>인게임 상단 HUD. SCORE(좌측 상단) + HI-SCORE(우측 상단). 5자리 0-padding.</summary>
+    /// <summary>인게임 상단 HUD. SCORE 표시. HI-SCORE는 NewBestBanner / GameOverPanel에서 처리.</summary>
     public sealed class GameHUD : MonoBehaviour
     {
         // TMP의 SetText 포매터는 C# string.Format과 다름. {0:D5} 대신 {0:00000} 사용해야 5자리 0-padding 정수가 됨.
         private const string ScoreFormat = "SCORE {0:00000}";
-        private const string BestFormat = "HI {0:00000}";
 
         [SerializeField] private ScoreTracker _scoreTracker;
         [SerializeField] private TMP_Text _scoreText;
-        [SerializeField] private TMP_Text _bestScoreText;
         [SerializeField] private UIScorePop _scorePop;
 
         private void Awake()
         {
-            if (_scoreTracker == null || _scoreText == null || _bestScoreText == null)
+            if (_scoreTracker == null || _scoreText == null)
             {
                 Debug.LogError("[GameHUD] 필수 참조 미할당");
                 enabled = false;
@@ -29,25 +27,18 @@ namespace VoxelRoad.UI
         {
             if (_scoreTracker == null) return;
             _scoreTracker.OnScoreChanged += HandleScoreChanged;
-            _scoreTracker.OnBestScoreChanged += HandleBestScoreChanged;
         }
 
         private void OnDisable()
         {
             if (_scoreTracker == null) return;
             _scoreTracker.OnScoreChanged -= HandleScoreChanged;
-            _scoreTracker.OnBestScoreChanged -= HandleBestScoreChanged;
         }
 
         private void HandleScoreChanged(int score)
         {
             _scoreText.SetText(ScoreFormat, score);
             if (_scorePop != null) _scorePop.Pop();
-        }
-
-        private void HandleBestScoreChanged(int best)
-        {
-            _bestScoreText.SetText(BestFormat, best);
         }
     }
 }

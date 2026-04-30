@@ -76,11 +76,8 @@ namespace VoxelRoad.EditorTools
 
             // 원본 텍스트 참조 캡처 (1회차: 활성 / N회차: 우리가 비활성화시킨 상태)
             var origScoreText = FindOriginalText(hud.transform, "ScoreText");
-            var origBestText = FindOriginalText(hud.transform, "BestScoreText");
             if (origScoreText == null && gameHud != null)
                 origScoreText = ReadTmpRef(gameHud, "_scoreText");
-            if (origBestText == null && gameHud != null)
-                origBestText = ReadTmpRef(gameHud, "_bestScoreText");
 
             // 기존 카드/배너 정리
             DestroyExisting(hud, CardName);
@@ -103,13 +100,6 @@ namespace VoxelRoad.EditorTools
                 {
                     var sProp = so.FindProperty("_scoreText");
                     if (sProp != null) sProp.objectReferenceValue = origScoreText;
-                }
-                // _bestScoreText는 GameHUD.Awake null 체크에 걸리므로 원본을 유지(비활성 상태)
-                if (origBestText != null)
-                {
-                    var bProp = so.FindProperty("_bestScoreText");
-                    if (bProp != null && bProp.objectReferenceValue == null)
-                        bProp.objectReferenceValue = origBestText;
                 }
                 so.ApplyModifiedProperties();
                 EditorUtility.SetDirty(gameHud);
@@ -165,7 +155,6 @@ namespace VoxelRoad.EditorTools
 
             // 원본 텍스트는 활성 유지(UIScorePop 코루틴 호스트)하되 alpha=0으로 투명 처리
             HideTextInPlace(origScoreText);
-            HideTextInPlace(origBestText);
 
             EditorUtility.SetDirty(hud);
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(hud.scene);
