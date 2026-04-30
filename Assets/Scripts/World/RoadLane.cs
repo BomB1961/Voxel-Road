@@ -12,6 +12,9 @@ namespace VoxelRoad.World
         [SerializeField] private VehicleSpawner _spawner;
         [SerializeField] private VehicleConfigSO _vehicleConfig;
 
+        [Header("Decor")]
+        [SerializeField] private Material _curbMaterial;
+
         public override LaneType Type => LaneType.Road;
 
         // 도로 청크 내부 경계에만 점선을 그리기 위한 플래그. 기본값은 양쪽 모두 그림.
@@ -74,6 +77,35 @@ namespace VoxelRoad.World
                     marker.transform.localPosition = new Vector3(x + 0.5f, 0.01f, zOffset);
                     marker.transform.localScale = new Vector3(0.6f, 0.02f, 0.08f);
                 }
+            }
+
+            BuildCurbs();
+        }
+
+        private void BuildCurbs()
+        {
+            if (_curbMaterial == null) return;
+            // 청크 바깥 경계(잔디·강·철길과 맞닿는 면)에만 연석 배치 → 도로 청크의 진입/이탈을 시각적으로 강조.
+            // _drawBackEdge=false 면 이 레인이 청크의 시작(back이 바깥 경계),
+            // _drawFrontEdge=false 면 청크의 끝(front가 바깥 경계).
+            int halfSpan = Mathf.RoundToInt(_laneSpanX / 2f);
+            if (!_drawBackEdge) SpawnCurbRow(halfSpan, -0.45f);
+            if (!_drawFrontEdge) SpawnCurbRow(halfSpan, 0.45f);
+        }
+
+        private void SpawnCurbRow(int halfSpan, float zLocal)
+        {
+            // 차량 Z 콜라이더 ±0.4. 연석 z=±0.45·Z=0.08 → 차량 외연과 0.01m 간격, 레인 경계(±0.5)와 0.01m 간격.
+            // X=1로 셀당 1개 생성 시 인접 셀 연석과 정확히 맞닿아 연속된 띠로 보임.
+            for (int x = -halfSpan; x < halfSpan; x++)
+            {
+                var curb = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                curb.name = "Curb";
+                curb.transform.SetParent(transform, false);
+                Destroy(curb.GetComponent<Collider>());
+                curb.GetComponent<MeshRenderer>().sharedMaterial = _curbMaterial;
+                curb.transform.localPosition = new Vector3(x, 0.05f, zLocal);
+                curb.transform.localScale = new Vector3(1f, 0.10f, 0.08f);
             }
         }
     }

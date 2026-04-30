@@ -217,3 +217,4 @@ MonoBehaviour:
   _markerSegment: {fileID: 0}
   _spawner: {fileID: 6847562798980580266}
   _vehicleConfig: {fileID: 11400000, guid: 4b260cd9300fd1249a9a4869a4cabc2f, type: 2}
+  _curbMaterial: {fileID: 2100000, guid: 3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f, type: 2}
