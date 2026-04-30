@@ -561,6 +561,12 @@ MonoBehaviour:
   _vehicleSlideDuration: 0.1
   _vehicleRotationTurns: 1.25
   _visualCenterY: 0.4
+  _sideKnockbackGrids: 2.5
+  _sideKnockbackArcHeight: 1.5
+  _sideKnockbackFlightDuration: 0.55
+  _sideKnockbackSlideGrids: 0.3
+  _sideKnockbackSlideDuration: 0.1
+  _sideKnockbackRotationTurns: 1.25
   _trainSquashDuration: 0.08
   _trainSlideGrids: 5
   _trainSlideDuration: 0.42

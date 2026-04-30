@@ -40,8 +40,8 @@ namespace VoxelRoad.Player
         [SerializeField] private float _sideKnockbackSlideGrids = 0.3f;
         [Tooltip("착지 후 슬라이드 시간(초)")]
         [SerializeField] private float _sideKnockbackSlideDuration = 0.1f;
-        [Tooltip("백플립 회전 바퀴 수")]
-        [SerializeField] private float _sideKnockbackRotationTurns = 1.0f;
+        [Tooltip("백플립 회전 바퀴 수. 1.25 = 등 대고 누운 자세로 마무리")]
+        [SerializeField] private float _sideKnockbackRotationTurns = 1.25f;
 
         [Header("Train Death (즉시 압괴 + 직선 슬라이드)")]
         [Tooltip("즉시 납작해지는 시간(초)")]
@@ -203,11 +203,6 @@ namespace VoxelRoad.Player
 
             Vector3 startPos = transform.position;
             Quaternion startRot = transform.rotation;
-            Vector3 startScale = transform.localScale;
-            Vector3 flatScale = new Vector3(
-                startScale.x * _flatScaleX,
-                startScale.y * _flatScaleY,
-                startScale.z * _flatScaleZ);
 
             // 회전 피벗 보정 (VehicleDeathRoutine과 동일 방식)
             Vector3 pivotOffset = new Vector3(0f, _visualCenterY, 0f);
@@ -235,7 +230,7 @@ namespace VoxelRoad.Player
             transform.rotation = flightEndRot;
             transform.position = centerEnd - flightEndRot * pivotOffset;
 
-            // === 페이즈 2: 슬라이드 + 납작 ===
+            // === 페이즈 2: 슬라이드 (스케일 변경 없음 — 등 대고 누운 자세 유지) ===
             Vector3 slideStartCenter = centerEnd;
             Vector3 slideEndCenter = new Vector3(
                 centerEnd.x + knockbackDir.x * _sideKnockbackSlideGrids,
@@ -250,11 +245,9 @@ namespace VoxelRoad.Player
                 float eased = t * (2f - t);
                 Vector3 center = Vector3.Lerp(slideStartCenter, slideEndCenter, eased);
                 transform.position = center - flightEndRot * pivotOffset;
-                transform.localScale = Vector3.Lerp(startScale, flatScale, t);
                 yield return null;
             }
             transform.position = slideEndCenter - flightEndRot * pivotOffset;
-            transform.localScale = flatScale;
             transform.rotation = flightEndRot;
         }
 
