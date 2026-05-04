@@ -14,8 +14,8 @@ namespace VoxelRoad.Player
         [SerializeField] private float _jumpHeight = 0.5f;
         [Tooltip("MaxZ로부터 이 그리드 수까지만 후퇴 가능. 카메라 deadzone과 일치시킬 것.")]
         [SerializeField] private int _backwardLimitGrids = 5;
-        [Tooltip("플레이어 X 이동 한계(절대값). cube 마커 위치(±23)에서 멈춤. WorldGenerator.LaneHalfSpan보다 좁아야 함.")]
-        [SerializeField] private int _playableHalfSpan = 23;
+        [Tooltip("플레이어 X 이동 한계(절대값). cube 마커(±23) 안쪽 ±20에서 멈춤(좌·우 각 3셀 여유).")]
+        [SerializeField] private int _playableHalfSpan = 20;
 
         public float MoveDuration => _moveDuration;
 

@@ -729,6 +729,7 @@ MonoBehaviour:
   _moveDuration: 0.12
   _jumpHeight: 0.5
   _backwardLimitGrids: 5
+  _playableHalfSpan: 20
 --- !u!114 &168922194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -943,7 +944,7 @@ MonoBehaviour:
   _forwardDeadzoneLanes: 5
   _autoAdvanceStartDelay: 5
   _autoAdvanceSpeed: 0
-  _mapHalfSpan: 25
+  _mapHalfSpan: 23
   _visibleHalfWidth: 5.73
 --- !u!114 &589902927
 MonoBehaviour:
