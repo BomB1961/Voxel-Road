@@ -57,20 +57,39 @@ namespace VoxelRoad.World
             if (prefabs == null || prefabs.Length == 0) return;
 
             int halfSpan = Mathf.RoundToInt(_laneSpanX / 2f);
-            // 연속 차단 방지: 같은 레인에서 3셀 이상 연속 차단되면 벽처럼 느껴져 길이 막힘.
-            // 직전 2셀이 연속 차단 상태면 현재 셀은 강제로 비워 둠.
+            // 좌·우 즉시 이동 보장: 차단 그룹은 최대 2셀 연속, 그룹 사이 최소 2 빈 셀.
+            // (X X _ X X) 같은 고립 빈 셀(좌·우 모두 차단) 패턴을 막아 어느 빈 셀에서든
+            // 좌·우 중 한 방향은 1번 입력으로 옆 칸 이동이 가능해짐. 결과 차단률은 자연스럽게
+            // 원본 density 의 ~70~80% 수준으로 감소(시각 데코는 밀도 유지·통로는 명확).
             int consecutiveBlocked = 0;
+            int forcedEmptyRemaining = 0;
             const int MAX_CONSECUTIVE = 2;
+            const int MIN_GAP_AFTER_GROUP = 2;
             for (int x = -halfSpan; x < halfSpan; x++)
             {
                 bool place = Random.value <= _config.GrassDecorDensity;
                 if (place && consecutiveBlocked >= MAX_CONSECUTIVE) place = false;
+                if (place && forcedEmptyRemaining > 0) place = false;
                 // 안전 구간 레인은 플레이어 시작 셀(x=0) 및 좌우 1셀을 비워 길을 보장
                 if (place && _isSafeStart && Mathf.Abs(x) <= 1) place = false;
-                if (!place) { consecutiveBlocked = 0; continue; }
 
-                var prefab = prefabs[Random.Range(0, prefabs.Length)];
-                if (prefab == null) { consecutiveBlocked = 0; continue; }
+                GameObject prefab = null;
+                if (place)
+                {
+                    prefab = prefabs[Random.Range(0, prefabs.Length)];
+                    if (prefab == null) place = false;
+                }
+
+                if (!place)
+                {
+                    if (consecutiveBlocked > 0)
+                        forcedEmptyRemaining = MIN_GAP_AFTER_GROUP - 1;  // 이번 빈 셀이 갭 1개 차감
+                    else if (forcedEmptyRemaining > 0)
+                        forcedEmptyRemaining--;
+                    consecutiveBlocked = 0;
+                    continue;
+                }
+
                 var decor = Instantiate(prefab, _decorRoot);
                 // 셀 정중앙에 배치 (플레이어 GridPosition.ToWorldPosition 과 동일한 정수 X 규약).
                 decor.transform.localPosition = new Vector3(x, 0f, 0f);
@@ -126,6 +145,7 @@ namespace VoxelRoad.World
 
         /// <summary>이전 grass 레인의 차단 셀과 함께 통행성을 보장. WorldGenerator가 grass-after-grass 시 호출.
         /// Phase A: 수직 2-스택 제거(같은 X 양 레인 차단 → current 비움).
+        /// Phase A.5: prev 차단 X 위치에서 current 좌우 동시 차단 방지(우회 후 옆 이동 강제 방지).
         /// Phase B: BFS로 prev 빈 셀이 모두 current 빈 셀에 도달 가능한지 검증, 실패 시 가장 가까운 current 차단 셀 제거 반복.
         /// 100k 시뮬에서 0 실패 검증 완료(2026-05-04).</summary>
         public void EnsurePassageWithPrevious(System.Collections.Generic.IReadOnlyCollection<int> prevBlockedCells)
@@ -136,14 +156,41 @@ namespace VoxelRoad.World
 
             var prevSet = new System.Collections.Generic.HashSet<int>(prevBlockedCells);
 
-            // Phase A
+            // Phase A: prev·current 차단 X 거리 ≥ 2 강제. 같은 X(수직 z-stack)와 ±1(대각선 z-stack)
+            // 모두 방지 → 어떤 X에서든 두 lane 중 한 쪽은 비어 있어 +z 한 번에 통과 가능.
+            var toRemoveA = new System.Collections.Generic.List<int>();
+            foreach (int b in _blockedCells)
+            {
+                if (prevSet.Contains(b) || prevSet.Contains(b - 1) || prevSet.Contains(b + 1))
+                    toRemoveA.Add(b);
+            }
+            for (int i = 0; i < toRemoveA.Count; i++)
+            {
+                int x = toRemoveA[i];
+                ClearDecorAt(x);
+                _blockedCells.Remove(x);
+            }
+
+            // Phase A.5: prev 차단 X 위치를 통과해 current[X] 빈 셀에 도달했을 때
+            // current[X-1]과 current[X+1]이 모두 차단이면 또다시 +z/-z 우회 강제됨 → 한 쪽 비움.
             for (int x = -hs; x <= hs; x++)
             {
-                if (_blockedCells.Contains(x) && prevSet.Contains(x))
-                {
-                    ClearDecorAt(x);
-                    _blockedCells.Remove(x);
-                }
+                if (!prevSet.Contains(x)) continue;
+                if (_blockedCells.Contains(x)) continue;
+                bool leftBlocked = _blockedCells.Contains(x - 1);
+                bool rightBlocked = _blockedCells.Contains(x + 1);
+                if (!leftBlocked || !rightBlocked) continue;
+
+                bool leftInRange = (x - 1) >= -hs;
+                bool rightInRange = (x + 1) <= hs;
+                int target;
+                if (leftInRange && rightInRange) target = (Random.value < 0.5f) ? (x - 1) : (x + 1);
+                else if (leftInRange) target = x - 1;
+                else if (rightInRange) target = x + 1;
+                else continue;
+
+                ClearDecorAt(target);
+                _blockedCells.Remove(target);
             }
 
             // Phase B
