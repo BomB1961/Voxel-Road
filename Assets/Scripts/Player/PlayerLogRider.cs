@@ -39,12 +39,12 @@ namespace VoxelRoad.Player
             }
         }
 
-        /// <summary>착지 후 통나무 탑승 처리. AlignmentTolerance 이내일 때만 탑승 → 일직선 정렬 강제.</summary>
+        /// <summary>착지 후 통나무 탑승 처리. AlignmentTolerance 이내일 때만 탑승 → 일직선 정렬 강제.
+        /// 실제 부착 절차는 Log.TryAttachPassenger 가 일괄 처리.</summary>
         public void TryBoardLog()
         {
             if (_player.WorldGenerator.GetLaneTypeAt(_player.GridPos.Z) != LaneType.River) return;
 
-            float halfSpan = _player.WorldGenerator.LaneHalfSpan;
             var hits = Physics.OverlapBox(_player.transform.position + Vector3.up * 0.3f,
                 new Vector3(0.6f, 0.4f, 0.6f), Quaternion.identity,
                 ~0, QueryTriggerInteraction.Collide);
@@ -52,15 +52,7 @@ namespace VoxelRoad.Player
             {
                 var log = hits[i].GetComponentInParent<Log>();
                 if (log == null) continue;
-                if (Mathf.Abs(log.transform.position.x) > halfSpan) continue;
-
-                float dx = Mathf.Abs(_player.transform.position.x - log.transform.position.x);
-                float dz = Mathf.Abs(_player.transform.position.z - log.transform.position.z);
-                if (dx > log.HalfWidthX || dz > log.HalfLengthZ) continue;
-
-                _player.transform.SetParent(log.transform, true);
-                log.SnapToSurface(_player.transform);
-                return;
+                if (log.TryAttachPassenger(_player.transform)) return;
             }
         }
 

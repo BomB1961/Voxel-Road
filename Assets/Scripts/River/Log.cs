@@ -80,15 +80,25 @@ namespace VoxelRoad.River
             // 점프 호 도중에는 탑승 차단 — 트리거는 1회성이므로 GetComponent 허용
             var player = other.GetComponent<PlayerController>();
             if (player != null && player.IsMoving) return;
-            if (Mathf.Abs(transform.position.x) > _halfLaneSpan) return;
+            TryAttachPassenger(other.transform);
+        }
 
-            float dx = Mathf.Abs(other.transform.position.x - transform.position.x);
-            float dz = Mathf.Abs(other.transform.position.z - transform.position.z);
-            if (dx > _halfWidthX || dz > _halfLengthZ) return;
+        /// <summary>승객 부착 진입점 통일: lane 안 통나무·콜라이더 안 위치 검증 후
+        /// SetParent + 표면 스냅 + _passenger 등록까지 일괄 처리. 탑승 성공 시 true.
+        /// OnTriggerEnter(트리거 진입)와 PlayerLogRider.TryBoardLog(착지 능동 검사)
+        /// 양쪽 진입점에서 호출돼 탑승 절차가 항상 한 곳에서만 일어나게 한다.</summary>
+        public bool TryAttachPassenger(Transform passenger)
+        {
+            if (Mathf.Abs(transform.position.x) > _halfLaneSpan) return false;
 
-            _passenger = other.transform;
+            float dx = Mathf.Abs(passenger.position.x - transform.position.x);
+            float dz = Mathf.Abs(passenger.position.z - transform.position.z);
+            if (dx > _halfWidthX || dz > _halfLengthZ) return false;
+
+            _passenger = passenger;
             _passenger.SetParent(transform, true);
             SnapToSurface(_passenger);
+            return true;
         }
 
         /// <summary>탑승자를 통나무 비주얼 표면(Y)과 정수 슬롯(X: 통나무 중심±tileSize)으로 스냅.
