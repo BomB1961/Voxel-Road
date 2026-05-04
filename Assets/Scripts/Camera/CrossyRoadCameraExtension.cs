@@ -34,8 +34,8 @@ namespace VoxelRoad.CameraSystem
         [SerializeField] private float _autoAdvanceSpeed = 0f;
 
         [Header("Map Boundary Clamp")]
-        [Tooltip("맵 X 절반 크기(LaneSpanX / 2). WorldConfig의 LaneSpanX와 일치시킬 것.")]
-        [SerializeField] private float _mapHalfSpan = 25f;
+        [Tooltip("화면 X 가시 한계(절대값). cube 마커 위치(±23) 기준으로 외벽 직전까지만 보이도록.")]
+        [SerializeField] private float _mapHalfSpan = 23f;
         [Tooltip("직교 카메라 가시 X 반폭 = OrthographicSize × Aspect. Inspector에서 직접 측정해 입력.")]
         [SerializeField] private float _visibleHalfWidth = 5.73f;
 
