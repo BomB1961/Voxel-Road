@@ -13,10 +13,13 @@ namespace VoxelRoad.Player
         [SerializeField] private float _idleTimeoutSeconds = 5f;
 
         private float _idleTimer;
+        private Camera _gameCamera;
 
         private void Awake()
         {
             if (_player == null) { Debug.LogError("[PlayerDeathTriggers] _player 미지정"); enabled = false; return; }
+            _gameCamera = Camera.main;
+            if (_gameCamera == null) { Debug.LogError("[PlayerDeathTriggers] Camera.main 미발견"); enabled = false; return; }
         }
 
         public void ResetIdleTimer() { _idleTimer = 0f; }
@@ -37,12 +40,13 @@ namespace VoxelRoad.Player
             if (_player.IsMoving) return;
             if (_player.transform.parent == null) return;
 
-            // 통나무가 맵 경계까지 흘러가면 탈출·익사
-            int halfSpan = _player.WorldGenerator.LaneHalfSpan;
+            // 통나무가 카메라 시야 끝까지 흘러가면 즉시 익사 (시야 밖 노출 차단)
+            float visibleHalfWidth = _gameCamera.orthographicSize * _gameCamera.aspect;
+            float cameraX = _gameCamera.transform.position.x;
             float px = _player.transform.position.x;
-            if (px < -halfSpan || px > halfSpan)
+            if (px < cameraX - visibleHalfWidth || px > cameraX + visibleHalfWidth)
             {
-                float clampedX = Mathf.Clamp(px, -halfSpan, halfSpan);
+                float clampedX = Mathf.Clamp(px, cameraX - visibleHalfWidth, cameraX + visibleHalfWidth);
                 _player.transform.SetParent(null, true);
                 var p = _player.transform.position;
                 _player.transform.position = new Vector3(clampedX, p.y, p.z);
