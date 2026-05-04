@@ -15,6 +15,7 @@
 | UI Pack | `Kenney/ui-pack/` | UGUI 버튼·패널·폰트 | https://kenney.nl/assets/ui-pack |
 | Interface Sounds | `Kenney/interface-sounds/` | UI 클릭·버튼 SFX | https://kenney.nl/assets/interface-sounds |
 | Impact Sounds | `Kenney/impact-sounds/` | 충돌·점프·발소리 SFX | https://kenney.nl/assets/impact-sounds |
+| Music Jingles (부분 임포트) | `Kenney/music-jingles/` | BGM(`jingles_NES01`) + OOB 사망 SFX(`jingles_HIT00`). 87개 중 2개만 import | https://kenney.nl/assets/music-jingles |
 
 ## 라이선스
 

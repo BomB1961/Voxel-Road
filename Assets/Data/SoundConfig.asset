@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a8e4dc23473368448892bb042a9734f, type: 3}
+  m_Name: SoundConfig
+  m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Audio.SoundConfigSO
+  _bgm: {fileID: 8300000, guid: 7a100df122211e7448fd1c2bade9d16b, type: 3}
+  _bgmVolume: 0.5
+  _bgmFadeOutSeconds: 0.5
+  _jump: {fileID: 8300000, guid: baddffa67497390469904137ccaf5472, type: 3}
+  _jumpVolume: 0.7
+  _jumpPitchJitter: 0.05
+  _deathVehicle: {fileID: 8300000, guid: 60a16a50a3185044d87736182ab44d10, type: 3}
+  _deathDrown: {fileID: 8300000, guid: e952444c9869f1e47858af37a7afedb4, type: 3}
+  _deathTrain: {fileID: 8300000, guid: 068f46b63a077de459662a3789c6d0f7, type: 3}
+  _deathOutOfBounds: {fileID: 8300000, guid: 8392151730525554591299e6bcb3fca3, type: 3}
+  _deathIdle: {fileID: 8300000, guid: e4964e67be8394e4d843f26d17178637, type: 3}
+  _deathVolume: 0.85
