@@ -25,7 +25,7 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: e5fc7647b45d4554db408381fdc48a11, type: 3}
   - {fileID: 919132149155446097, guid: b284afbbd55d141489a4f3b9232f8a28, type: 3}
   - {fileID: 919132149155446097, guid: 55d60739b2da6d84c9fa52060a71d9b0, type: 3}
-  _grassDecorDensity: 0.12
+  _grassDecorDensity: 0.3
   _grassDecorScale: 1
   _grassWeight: 0.35
   _roadWeight: 0.4

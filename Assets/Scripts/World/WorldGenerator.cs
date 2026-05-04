@@ -187,6 +187,14 @@ namespace VoxelRoad.World
             }
 
             lane.Initialize(zIndex, _config.LaneSpanX, difficultyMultiplier);
+
+            // Grass-after-grass 통행성 보장: 이전 레인이 grass면 cross-lane + BFS 보정
+            if (type == LaneType.Grass && lane is GrassLane currentGrass
+                && _lanes.TryGetValue(zIndex - 1, out var prevLane) && prevLane is GrassLane prevGrass)
+            {
+                currentGrass.EnsurePassageWithPrevious(prevGrass.BlockedCells);
+            }
+
             _lanes[zIndex] = lane;
             _furthestSpawnedZ = Mathf.Max(_furthestSpawnedZ, zIndex);
         }
