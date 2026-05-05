@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a8e4dc23473368448892bb042a9734f, type: 3}
   m_Name: SoundConfig
   m_EditorClassIdentifier: Assembly-CSharp::VoxelRoad.Audio.SoundConfigSO
-  _bgm: {fileID: 8300000, guid: 7a100df122211e7448fd1c2bade9d16b, type: 3}
+  _bgm: {fileID: 8300000, guid: 5df59a9d6efb4fdd8587510309909237, type: 3}
   _bgmVolume: 0.5
   _bgmFadeOutSeconds: 0.5
   _jump: {fileID: 8300000, guid: baddffa67497390469904137ccaf5472, type: 3}

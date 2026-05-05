@@ -1,0 +1,19 @@
+Pixabay Music — Voxel Road BGM
+================================
+
+File:    cyberwave-orchestra-upbeat-background-loop-casual-video-game-music-249200.mp3
+Title:   Upbeat Background Loop - Casual Video Game Music
+Artist:  Cyberwave Orchestra
+Source:  https://pixabay.com/music/search/casual%20game/
+Pixabay ID: 249200
+
+License: Pixabay Content License
+URL:     https://pixabay.com/service/license-summary/
+
+Summary (paraphrased — not legal advice):
+- Free for commercial and non-commercial use.
+- No attribution required (but appreciated).
+- Cannot be redistributed/sold as a standalone audio asset.
+- Use in games, videos, apps, websites permitted.
+
+Project usage: in-game background music loop.
