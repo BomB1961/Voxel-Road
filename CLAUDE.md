@@ -44,7 +44,6 @@ No CLI build scripts exist. All builds are manual via Unity Editor:
 - 검증 없이 "될 것 같다"로 완료 처리하지 말 것. 사용자에게 에디터 플레이 검증을 요청할 것.
 - 미구현 기능을 완료로 보고하지 말 것. TODO는 `// TODO:` 주석과 함께 명시적으로 보고할 것.
 - 한 커밋 = 한 논리적 변경. 여러 작업을 한 커밋에 섞지 말 것.
-- Unity 에디터는 Claude가 직접 조작하지 말 것.
 
 ---
 
