@@ -1,0 +1,10 @@
+- [진행 상황·다음 작업](project_roadmap.md) — 최신 커밋 dc187f9(2026-04-30) Step 11 아트 폴리시 진행: GameOver CTA·Rail 침목·River 연잎·Road 연석·Grass/Road 컬러 패치. 잔여 = URP 라이팅 톤업 + Step 10 오디오
+- [스코프·목표 선언](feedback_scope.md) — Crossy Road 모작 프로토타입, 아트/캐릭터 확장 금지, 정상 구동·무버그 최우선
+- [외부 에셋 CC0 전용](feedback_asset_license.md) — 모델·텍스처·오디오 전부 CC0만. CC-BY 이상은 예외 승인 필요
+- [모듈화 현황 평가](project_modularity_status.md) — 중간 수준. PlayerController 비대·Spawner 3종 중복·탑승 로직 분산. Step 10 후 리팩토링
+- [수정 승인·모호 요청 확인](feedback_approval_and_clarify.md) — 기존 코드 수정 전 승인 필수, 모호한 요청은 되물어 확인 후 진행
+- [Git 워크플로우](feedback_git_workflow.md) — 1인 개발, feature 브랜치·PR 없이 main에 직접 커밋·푸시
+- [테스트 모드 클린업 규칙](feedback_test_mode_cleanup.md) — TestMode류 임시 구현은 사용자 요청 시 코드·참조·씬 데이터 전부 제거. 원 게임 기획에 흔적 남기지 말 것
+- [새 PC 동기화 셋업](feedback_new_pc_setup.md) — git pull 직후 PC당 1회 필요: Android Switch Platform + Game 뷰 프리셋(1080×1920 메인) 수동 추가. UserSettings·EditorPrefs는 gitignore라 따라오지 않음. 사용자 기억 흐릿한 것 정상
+- [Player 회귀 13 시나리오](project_player_regression_scenarios.md) — Player 모듈 변경 시 매번 돌릴 수동 검증 체크리스트(이동·사망·통나무·연출)
+- [에디터 Lag 1순위 대응: 재시작](feedback_editor_lag_first_response.md) — 에디터 Play 모드 lag·hitch 보고 시 Profiler·코드 측정 전에 Unity 완전 재시작부터. 2026-05-05 세션에서 두 번 검증(셰이더 어레이 경고, 누적 hitch). 빌드 결과물 lag 은 예외
